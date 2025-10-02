@@ -1,5 +1,20 @@
 {
   "extends": "@react-native/typescript-config",
-  "include": ["**/*.ts", "**/*.tsx"],
-  "exclude": ["**/node_modules", "**/Pods"]
+  "include": ["**/*.ts", "**/*.tsx", "src/utils/JwtDecoder.ts" ],
+  "exclude": ["**/node_modules", "**/Pods"],
+  "compilerOptions": {
+    "typeRoots": ["node_modules/@types", "src/interfaces"],
+    "baseUrl": "./",
+    "paths": {
+      "@assets/*": ["src/assets/*"],
+      "@features/*": ["src/features/*"],
+      "@navigation/*": ["src/navigation/*"],
+      "@components/*": ["src/components/*"],
+      "@unistyles/*": ["src/unistyles/*"],
+      "@states/*": ["src/states/*"],
+      "@services/*": ["src/services/*"],
+      "@utils/*": ["src/utils/*"],
+      "@interfaces/*":["src/interfaces/*"]
+    }
+  }
 }
