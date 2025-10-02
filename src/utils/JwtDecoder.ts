@@ -1,4 +1,6 @@
-export function decodeJwtPayload(token: string) {
+import { JwtTokenUser } from "@interfaces/response/common";
+
+export function decodeJwtPayload(token: string):JwtTokenUser{
   const payloadB64 = token.split(".")[1];
 
 

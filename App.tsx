@@ -5,18 +5,26 @@
  * @format
  */
 
-import { StatusBar, StyleSheet, useColorScheme, View } from 'react-native';
-import {
-  SafeAreaProvider,
-  useSafeAreaInsets,
-} from 'react-native-safe-area-context';
-import { AppRoutings } from 'src/screens';
+import React from 'react';
+import { StatusBar, useColorScheme } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { ThemeProvider } from '@contexts/ThemeContext';
+import { AppRoutings } from '@screens';
 
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
 
   return (
-    <AppRoutings isDark={isDarkMode}/>
+    <SafeAreaProvider>
+      <ThemeProvider initialTheme={isDarkMode ? 'dark' : 'light'}>
+        <StatusBar
+          barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+          backgroundColor="transparent"
+          translucent
+        />
+        <AppRoutings isDark={isDarkMode} />
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 }
 
