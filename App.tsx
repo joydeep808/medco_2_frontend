@@ -10,6 +10,7 @@ import { StatusBar, useColorScheme } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider } from '@contexts/ThemeContext';
 import { AppRoutings } from '@screens';
+import '@config/_axios/AxiosInterceptor'; // Initialize axios interceptors
 
 function App() {
   const isDarkMode = useColorScheme() === 'dark';

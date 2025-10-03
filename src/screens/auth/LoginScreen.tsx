@@ -31,6 +31,7 @@ import {
   borderRadius,
   shadows,
   typography,
+  Input,
 } from '@components';
 import AuthService from '@services/AuthService';
 import { navigate } from '@utils/NavigationUtils';
@@ -162,6 +163,7 @@ export const LoginScreen: React.FC = () => {
     setIsLoading(true);
     try {
       const response = await AuthService.generateOtp(phone);
+      console.log(response);
       if (response.success) {
         setResendTimer(30);
         Alert.alert('OTP Sent', 'New OTP has been sent to your phone');

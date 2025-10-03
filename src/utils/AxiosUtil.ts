@@ -58,19 +58,18 @@ export function handleApiResponse<T>(response: AxiosResponse<ApiResponse<T>>): A
 }
 
 // Example typed API call function
-export async function getRequest<T>(url: string): Promise<ApiResponse<T>> {
+export async function getRequest<T>(url: string) {
   try {
-    const response = await apiInstance.get<ApiResponse<T>>(url);
-    return handleApiResponse(response);
+    return await apiInstance.get<ApiResponse<T>>(url);
+    
   } catch (error) {
     return AxiosErrorHandler(error);
   }
 }
 
-export async function postRequest<T, D>(url: string, data: D): Promise<ApiResponse<T>> {
+export async function postRequest<T, D>(url: string, data: D) {
   try {
-    const response = await apiInstance.post<ApiResponse<T>>(url, data)
-    return handleApiResponse(response)
+    return await apiInstance.post<ApiResponse<T>>(url, data)
   } catch (error) {
     return AxiosErrorHandler(error);
   }

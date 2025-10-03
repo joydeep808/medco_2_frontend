@@ -113,11 +113,9 @@ export const HomeScreen: React.FC = () => {
 
       console.log('Fetching pharmacies for coordinates:', lat, lng);
 
-      const response = await PharmacyService.getNearbyPharmacies(lat, lng, 15);
-      const result = response.data;
-      console.log(result);
-      if (result.success && result.data) {
-        const pharmaciesWithDistance = result.data.content.map(
+      const response = await PharmacyService.getNearbyPharmacies(lat, lng, 15)
+      if (response.success && response.data) {
+        const pharmaciesWithDistance = response.data.content.map(
           (pharmacy: any) => ({
             ...pharmacy,
             distance: calculateDistance(
