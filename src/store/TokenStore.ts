@@ -19,6 +19,9 @@ class TokenStore{
     getKey(key:string){
         return this.mmkv.getString(key)
     }
+    removeTokens(){
+        this.mmkv.clearAll();
+    }
 }
 
 const tokenStore = new TokenStore();

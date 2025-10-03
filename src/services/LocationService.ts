@@ -77,6 +77,17 @@ export interface LocationError {
   retryAction?: () => void;
 }
 
+const olaMapAxiosInstance = axios.create({
+  baseURL: 'https://api.olamaps.io/places/v1/',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+olaMapAxiosInstance.interceptors.response.use(async config => {
+  console.log('config', config);
+  return config;
+});
+
 export class LocationService {
   private static watchId: number | null = null;
   private static lastKnownLocation: LocationData | null = null;
@@ -145,6 +156,7 @@ export class LocationService {
             this.lastKnownLocation = locationData;
             resolve(locationData);
           } catch (geocodeError) {
+            console.log('Geo Code error ', geocodeError);
             // If geocoding fails, still return coordinates
             const locationData: LocationData = {
               latitude: position.coords.latitude,
@@ -452,12 +464,6 @@ export class LocationService {
    */
   private static readonly OLA_API_KEY =
     'IcJ1kHYannayv3ngvSqUBpuWjggPFIET6nAB8CUu';
-  private static readonly olaMapAxiosInstance = axios.create({
-    baseURL: 'https://api.olamaps.io/places/v1/',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
 
   /**
    * Ola Maps autocomplete
@@ -465,6 +471,7 @@ export class LocationService {
   static async autoComplete(text: string): Promise<any> {
     try {
       const location = await this.getUserLocation();
+      console.log('User Location ', location);
       const url = `autocomplete?location=${location?.coords.latitude},${
         location?.coords.longitude
       }&radius=500&strictbounds=false&api_key=${
@@ -484,11 +491,17 @@ export class LocationService {
     lat: number;
     lng: number;
   }): Promise<any> {
+    console.log('User Location ', location);
     try {
       const url = `reverse-geocode?latlng=${location.lat},${location.lng}&api_key=${this.OLA_API_KEY}`;
       const res = await this.olaGetRequest(url);
 
-      if (res && res!.status === 'ok' && res.results && res.results.length > 0) {
+      if (
+        res &&
+        res!.status === 'ok' &&
+        res.results &&
+        res.results.length > 0
+      ) {
         const result = res.results[0];
         return {
           formatted_address: result.formatted_address,
@@ -509,7 +522,7 @@ export class LocationService {
    */
   static async olaGetRequest<T>(url: string): Promise<T | null> {
     try {
-      const response = await this.olaMapAxiosInstance.get<T>(url);
+      const response = await olaMapAxiosInstance.get<T>(url);
       return response.data;
     } catch (error) {
       console.error('Ola Maps API error:', error);

@@ -80,7 +80,6 @@ export const HomeScreen: React.FC = () => {
   }, []);
 
   const loadInitialData = async () => {
-    console.log('Current location:', currentLocation);
     // Always try to fetch pharmacies, with fallback coordinates if needed
     await fetchNearbyPharmacies();
   };
@@ -111,7 +110,6 @@ export const HomeScreen: React.FC = () => {
       const lat = currentLocation?.latitude || 23.8315;
       const lng = currentLocation?.longitude || 91.2868;
 
-      console.log('Fetching pharmacies for coordinates:', lat, lng);
 
       const response = await PharmacyService.getNearbyPharmacies(lat, lng, 15)
       if (response.success && response.data) {
@@ -127,13 +125,11 @@ export const HomeScreen: React.FC = () => {
           }),
         );
 
-        console.log('Processed pharmacies:', pharmaciesWithDistance);
         setNearbyPharmacies(pharmaciesWithDistance || []);
       }
     } catch (error) {
       console.error('Failed to fetch nearby pharmacies:', error);
     } finally {
-      console.log(nearbyPharmacies);
       setPharmacyLoading(false);
     }
   };

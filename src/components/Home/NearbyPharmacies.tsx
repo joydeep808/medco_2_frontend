@@ -40,7 +40,6 @@ export const NearbyPharmacies: React.FC<NearbyPharmaciesProps> = ({
     if (onViewAll) {
       onViewAll();
     } else {
-      console.log('View all pharmacies');
     }
   };
 

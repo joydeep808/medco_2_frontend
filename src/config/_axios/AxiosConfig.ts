@@ -2,7 +2,7 @@ import tokenStore from '@store/TokenStore';
 import axios from 'axios';
 
 export const apiInstance = axios.create({
-  baseURL: 'http://192.168.31.67:3005/api/v1',
+  baseURL: 'http://10.153.235.98:3005/api/v1',
 });
 
 // Request interceptor to add auth token

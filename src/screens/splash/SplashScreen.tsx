@@ -88,7 +88,6 @@ export const SplashScreen: React.FC = () => {
 
         // Check location permissions
         const hasPermission = await LocationService.requestLocationPermission();
-        console.log(hasPermission);
         setLocationPermission(hasPermission);
 
         if (hasPermission) {
@@ -100,7 +99,6 @@ export const SplashScreen: React.FC = () => {
                 setTimeout(() => reject(new Error('Location timeout')), 5000),
               ),
             ]);
-            console.log(location);
 
             setCurrentLocation(location);
             setLocationError(null);

@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import {
   View,
   StyleSheet,
-  SafeAreaView,
   StatusBar,
   FlatList,
   TouchableOpacity,
@@ -12,6 +11,7 @@ import {
 import { BodyText, Heading2, Button } from '@components';
 import { useOrderStore } from '@store/OrderStore';
 import { navigate } from '@utils/NavigationUtils';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const OrderScreen: React.FC = () => {
   const [selectedStatus, setSelectedStatus] = useState<string>('ALL');

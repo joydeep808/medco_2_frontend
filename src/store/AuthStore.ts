@@ -2,6 +2,7 @@ import { apiInstance } from '@config/_axios/AxiosConfig';
 import { JwtTokenUser } from '@interfaces/response/common';
 import { decodeJwtPayload } from '@utils/JwtDecoder';
 import { create } from 'zustand';
+import tokenStore from './TokenStore';
 
 export interface AuthState {
   token: string | null;
@@ -32,13 +33,13 @@ export function storeInfo(): AuthState {
 }
 
 export function setToken(token: string) {
-  
   useAuthStore.getState().setToken(token),
     useAuthStore.getState().setIsUserLoggedIn(true);
   useAuthStore.getState().setUser(decodeJwtPayload(token));
   apiInstance.defaults.headers.common['accessToken'] = token;
 }
 export function removeToken() {
+  tokenStore.removeTokens();
   useAuthStore.getState().removeToken(),
     useAuthStore.getState().setIsUserVerifyed(false),
     useAuthStore.getState().setIsUserLoggedIn(false),
