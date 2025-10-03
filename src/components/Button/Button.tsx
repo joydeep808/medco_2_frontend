@@ -1,6 +1,7 @@
 /**
  * Reusable Button Component
  * Supports multiple variants and sizes with consistent theming
+ * Matches design: outline, ghost (with light bg), and solid buttons
  */
 
 import React from 'react';
@@ -25,7 +26,10 @@ export type ButtonVariant =
   | 'secondary'
   | 'outline'
   | 'ghost'
-  | 'danger';
+  | 'danger'
+  | 'success'
+  | 'warning';
+
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 interface ButtonProps {
@@ -40,6 +44,22 @@ interface ButtonProps {
   textStyle?: TextStyle;
 }
 
+// Helper: Spinner color based on variant
+const getSpinnerColor = (variant: ButtonVariant): string => {
+  switch (variant) {
+    case 'primary':
+    case 'secondary':
+    case 'danger':
+    case 'success':
+    case 'warning':
+      return colors.white;
+    case 'outline':
+    case 'ghost':
+    default:
+      return colors.primary[500];
+  }
+};
+
 export const Button: React.FC<ButtonProps> = ({
   title,
   onPress,
@@ -51,10 +71,15 @@ export const Button: React.FC<ButtonProps> = ({
   style,
   textStyle,
 }) => {
+  // Determine if we need outline-specific padding adjustment
+  const isOutline = variant === 'outline';
+
   const buttonStyle = [
     styles.base,
     styles[variant],
     styles[size],
+    isOutline &&
+      styles[`${variant}${size.charAt(0).toUpperCase() + size.slice(1)}`],
     fullWidth && styles.fullWidth,
     (disabled || loading) && styles.disabled,
     style,
@@ -76,10 +101,7 @@ export const Button: React.FC<ButtonProps> = ({
       activeOpacity={0.8}
     >
       {loading ? (
-        <ActivityIndicator
-          size="small"
-          color={variant === 'primary' ? colors.white : colors.primary[500]}
-        />
+        <ActivityIndicator size="small" color={getSpinnerColor(variant)} />
       ) : (
         <Text style={textStyles}>{title}</Text>
       )}
@@ -88,7 +110,7 @@ export const Button: React.FC<ButtonProps> = ({
 };
 
 const styles = StyleSheet.create({
-  // Base styles
+  // Base shared styles
   base: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -101,92 +123,94 @@ const styles = StyleSheet.create({
   },
 
   disabled: {
-    opacity: 0.5,
+    opacity: 0.6,
   },
 
-  // Variants
+  // === Variants ===
   primary: {
     backgroundColor: colors.primary[500],
   },
-
   secondary: {
-    backgroundColor: colors.light.surface,
-    borderWidth: 1,
-    borderColor: colors.light.border,
+    backgroundColor: colors.secondary[500],
   },
-
   outline: {
     backgroundColor: 'transparent',
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: colors.primary[500],
   },
-
   ghost: {
-    backgroundColor: 'transparent',
+    backgroundColor: '#f5f5f5', // light gray background like in your screenshot
+    borderWidth: 0,
   },
-
   danger: {
     backgroundColor: colors.error.DEFAULT,
   },
+  success: {
+    backgroundColor: colors.success.DEFAULT,
+  },
+  warning: {
+    backgroundColor: colors.warning.DEFAULT,
+  },
 
-  // Sizes
+  // === Base Sizes (for solid & ghost) ===
   sm: {
     paddingVertical: spacing.xs + 2,
     paddingHorizontal: spacing.md,
     minHeight: 36,
   },
-
   md: {
     paddingVertical: spacing.sm + 4,
     paddingHorizontal: spacing.lg,
     minHeight: 48,
   },
-
   lg: {
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.xl,
     minHeight: 56,
   },
 
-  // Text styles
+  // === Outline-specific size adjustments (to offset 2px border) ===
+  outlineSm: {
+    paddingVertical: spacing.xs + 2 - 1,
+    paddingHorizontal: spacing.md - 1,
+  },
+  outlineMd: {
+    paddingVertical: spacing.sm + 4 - 1,
+    paddingHorizontal: spacing.lg - 1,
+  },
+  outlineLg: {
+    paddingVertical: spacing.md - 1,
+    paddingHorizontal: spacing.xl - 1,
+  },
+
+  // === Text base ===
   text: {
-    fontWeight: typography.fontWeight.medium,
+    fontWeight: typography.fontWeight.semibold,
     textAlign: 'center',
+    includeFontPadding: false, // removes extra top/bottom padding on Android
   },
 
-  primaryText: {
-    color: colors.white,
-  },
+  // === Text colors ===
+  primaryText: { color: colors.white },
+  secondaryText: { color: colors.white },
+  outlineText: { color: colors.primary[500] },
+  ghostText: { color: colors.primary[500] },
+  dangerText: { color: colors.white },
+  successText: { color: colors.white },
+  warningText: { color: colors.white },
 
-  secondaryText: {
-    color: colors.light.textPrimary,
-  },
-
-  outlineText: {
-    color: colors.primary[500],
-  },
-
-  ghostText: {
-    color: colors.primary[500],
-  },
-
-  dangerText: {
-    color: colors.white,
-  },
-
+  // Disabled text
   disabledText: {
-    opacity: 0.7,
+    opacity: 0.8,
   },
 
-  // Text sizes
+  // === Text Sizes ===
   smText: {
     fontSize: typography.fontSize.sm,
   },
-
   mdText: {
     fontSize: typography.fontSize.base,
   },
-
   lgText: {
     fontSize: typography.fontSize.lg,
   },

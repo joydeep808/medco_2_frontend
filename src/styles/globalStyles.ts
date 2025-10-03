@@ -104,6 +104,11 @@ export const globalStyles = StyleSheet.create({
     paddingHorizontal: spacing.md,
   },
 
+  containerSafe: {
+    flex: 1,
+    backgroundColor: colors.light.background,
+  },
+
   centerContent: {
     flex: 1,
     justifyContent: 'center',
@@ -119,6 +124,15 @@ export const globalStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+  },
+
+  column: {
+    flexDirection: 'column',
+  },
+
+  columnCenter: {
+    flexDirection: 'column',
+    alignItems: 'center',
   },
 
   // Typography
@@ -180,45 +194,98 @@ export const globalStyles = StyleSheet.create({
 
   // Cards and surfaces
   card: {
-    backgroundColor: colors.light.surface,
-    borderRadius: borderRadius.lg,
-    padding: spacing.md,
+    backgroundColor: colors.white,
+    borderRadius: borderRadius.xl,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.light.border,
+    ...shadows.sm,
+  },
+
+  cardElevated: {
+    backgroundColor: colors.white,
+    borderRadius: borderRadius.xl,
+    padding: spacing.lg,
+    borderWidth: 0,
     ...shadows.md,
   },
 
   cardHighlight: {
     backgroundColor: colors.light.surfaceHighlight,
+    borderRadius: borderRadius.xl,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.light.borderHighlight,
+    ...shadows.lg,
+  },
+
+  cardCompact: {
+    backgroundColor: colors.white,
     borderRadius: borderRadius.lg,
     padding: spacing.md,
-    ...shadows.lg,
+    borderWidth: 1,
+    borderColor: colors.light.border,
+    ...shadows.sm,
+  },
+
+  surface: {
+    backgroundColor: colors.light.surface,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+  },
+
+  surfaceElevated: {
+    backgroundColor: colors.white,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    ...shadows.sm,
   },
 
   // Buttons (base styles)
   buttonBase: {
-    paddingVertical: spacing.sm + 4,
+    paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.lg,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 48,
+    minHeight: 52,
+    ...shadows.sm,
+  },
+
+  buttonPrimary: {
+    backgroundColor: colors.primary[500],
+    borderRadius: borderRadius.lg,
+    ...shadows.md,
+  },
+
+  buttonSecondary: {
+    backgroundColor: colors.secondary[500],
+    borderRadius: borderRadius.lg,
+    ...shadows.sm,
   },
 
   // Form elements
   input: {
-    backgroundColor: colors.light.surface,
-    borderWidth: 1,
+    backgroundColor: colors.white,
+    borderWidth: 2,
     borderColor: colors.light.border,
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm + 4,
+    borderRadius: borderRadius.lg,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     fontSize: typography.fontSize.base,
     color: colors.light.textPrimary,
-    minHeight: 48,
+    minHeight: 52,
   },
 
   inputFocused: {
     borderColor: colors.primary[500],
+    backgroundColor: colors.light.surface,
     ...shadows.sm,
+  },
+
+  inputError: {
+    borderColor: colors.error.DEFAULT,
+    backgroundColor: colors.error[50],
   },
 
   // Dividers

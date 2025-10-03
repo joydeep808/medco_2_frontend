@@ -116,6 +116,8 @@ export interface OrderItem {
 
 
 export interface JwtTokenUser {
+  exp:number
+  iat:number
   userId: number;
   name:string;
   email:string;

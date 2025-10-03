@@ -319,11 +319,55 @@ export class AuthService {
    */
   static async validateAndNavigate(): Promise<void> {
     const isValid = await this.validateAndRefreshToken();
-    
+
     if (isValid) {
       this.navigateToRoleBasedHome();
     } else {
       resetAndNavigateUnsafe('LoginScreen');
+    }
+  }
+
+  /**
+   * Generate OTP for phone number
+   */
+  static async generateOtp(phone: string): Promise<ApiResponse<null>> {
+    return postRequest<null, { phone: string }>('/auth/generate-otp', {
+      phone,
+    });
+  }
+
+  /**
+   * Login with phone and OTP
+   */
+  static async loginWithOtp(
+    phone: string,
+    otp: string,
+  ): Promise<ApiResponse<LoginResponse>> {
+    try {
+      const response = await postRequest<
+        LoginResponse,
+        { phone: string; otp: string }
+      >('/auth/login', { phone, otp });
+
+      if (response.success) {
+        // Store tokens
+        tokenStore.setToken('access_token', response.data.accessToken);
+        tokenStore.setToken('refresh_token', response.data.refreshToken);
+
+        // Set auth state
+        setToken(response.data.accessToken);
+      }
+
+      return response;
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Login failed. Please try again.',
+        data: {} as LoginResponse,
+        requestId: '',
+        timestamp: '',
+        version: '',
+      };
     }
   }
 }

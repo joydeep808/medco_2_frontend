@@ -95,8 +95,8 @@
 
 ```json
 {
-  "email": "[email]",
-  "password": "password123"
+  "mobile": "",
+  "otp": "123456"
 }
 ```
 

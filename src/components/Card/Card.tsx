@@ -1,6 +1,6 @@
 /**
- * Reusable Card Component
- * Provides consistent surface styling with elevation and theming
+ * Modern Card Component
+ * Provides consistent card styling with multiple variants
  */
 
 import React from 'react';
@@ -8,25 +8,25 @@ import { View, StyleSheet, ViewStyle } from 'react-native';
 import { colors } from '../../styles/colors';
 import { spacing, borderRadius, shadows } from '../../styles/globalStyles';
 
-export type CardVariant = 'default' | 'elevated' | 'outlined' | 'filled';
+export type CardVariant = 'default' | 'elevated' | 'outlined' | 'compact';
 
 interface CardProps {
   children: React.ReactNode;
   variant?: CardVariant;
-  padding?: keyof typeof spacing;
   style?: ViewStyle;
+  padding?: keyof typeof spacing;
 }
 
 export const Card: React.FC<CardProps> = ({
   children,
   variant = 'default',
-  padding = 'md',
   style,
+  padding,
 }) => {
   const cardStyle = [
     styles.base,
     styles[variant],
-    { padding: spacing[padding] },
+    padding && { padding: spacing[padding] },
     style,
   ];
 
@@ -35,27 +35,35 @@ export const Card: React.FC<CardProps> = ({
 
 const styles = StyleSheet.create({
   base: {
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.xl,
+    padding: spacing.lg,
   },
 
   default: {
-    backgroundColor: colors.light.surface,
-    ...shadows.md,
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.light.border,
+    ...shadows.sm,
   },
 
   elevated: {
-    backgroundColor: colors.light.surface,
-    ...shadows.lg,
+    backgroundColor: colors.white,
+    borderWidth: 0,
+    ...shadows.md,
   },
 
   outlined: {
     backgroundColor: colors.light.surface,
-    borderWidth: 1,
-    borderColor: colors.light.border,
+    borderWidth: 2,
+    borderColor: colors.light.borderHighlight,
   },
 
-  filled: {
-    backgroundColor: colors.light.surfaceHighlight,
+  compact: {
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.light.border,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
     ...shadows.sm,
   },
 });

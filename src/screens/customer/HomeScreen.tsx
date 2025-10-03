@@ -265,7 +265,7 @@ export const HomeScreen: React.FC = () => {
                     </Caption>
                   </Row>
                   {index < activities.length - 1 && <Divider />}
-                </React.Fragment>
+              </React.Fragment>
               ))}
             </Column>
           </Card>

@@ -25,22 +25,48 @@ export type TypographyColor =
   | 'contrast'
   | 'success'
   | 'warning'
-  | 'error';
+  | 'error'
+  | 'white'
+  | 'disabled';
+
+export type TypographyWeight =
+  | 'light'
+  | 'normal'
+  | 'medium'
+  | 'semibold'
+  | 'bold';
+
+export type TypographySize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+
+export type TypographyAlign = 'left' | 'center' | 'right' | 'justify';
 
 interface TypographyProps extends TextProps {
   variant?: TypographyVariant;
   color?: TypographyColor;
+  weight?: TypographyWeight;
+  size?: TypographySize;
+  align?: TypographyAlign;
   children: React.ReactNode;
 }
 
 export const Typography: React.FC<TypographyProps> = ({
   variant = 'body',
   color = 'primary',
+  weight,
+  size,
+  align,
   style,
   children,
   ...props
 }) => {
-  const textStyle = [styles[variant], styles[`${color}Color`], style];
+  const textStyle = [
+    styles[variant],
+    styles[`${color}Color`],
+    weight && styles[`${weight}Weight`],
+    size && styles[`${size}Size`],
+    align && styles[`${align}Align`],
+    style,
+  ];
 
   return (
     <Text style={textStyle} {...props}>
@@ -151,6 +177,73 @@ const styles = StyleSheet.create({
 
   errorColor: {
     color: colors.error.DEFAULT,
+  },
+
+  whiteColor: {
+    color: colors.white,
+  },
+
+  disabledColor: {
+    color: colors.light.textDisabled,
+  },
+
+  // Weight variants
+  lightWeight: {
+    fontWeight: typography.fontWeight.light,
+  },
+
+  normalWeight: {
+    fontWeight: typography.fontWeight.normal,
+  },
+
+  mediumWeight: {
+    fontWeight: typography.fontWeight.medium,
+  },
+
+  semiboldWeight: {
+    fontWeight: typography.fontWeight.semibold,
+  },
+
+  boldWeight: {
+    fontWeight: typography.fontWeight.bold,
+  },
+
+  // Size variants
+  xsSize: {
+    fontSize: typography.fontSize.xs,
+  },
+
+  smSize: {
+    fontSize: typography.fontSize.sm,
+  },
+
+  mdSize: {
+    fontSize: typography.fontSize.base,
+  },
+
+  lgSize: {
+    fontSize: typography.fontSize.lg,
+  },
+
+  xlSize: {
+    fontSize: typography.fontSize.xl,
+  },
+
+  // Alignment variants
+  leftAlign: {
+    textAlign: 'left',
+  },
+
+  centerAlign: {
+    textAlign: 'center',
+  },
+
+  rightAlign: {
+    textAlign: 'right',
+  },
+
+  justifyAlign: {
+    textAlign: 'justify',
   },
 });
 

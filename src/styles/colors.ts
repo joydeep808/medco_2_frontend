@@ -1,90 +1,129 @@
 /**
- * Global Color System
+ * Modern Color System
  * Based on HSL color format for intuitive palette creation
  * Supports both light and dark modes with semantic color naming
+ * Optimized for medical/healthcare applications
  */
 
-// Base color configuration
-const BASE_HUE = 220; // Blue-ish hue for primary colors
-const BASE_SATURATION = 85; // High saturation for vibrant colors
-const NEUTRAL_SATURATION = 0; // No saturation for neutral grays
+// Base color configuration - Medical blue theme
+const BASE_HUE = 210; // Medical blue hue
+const BASE_SATURATION = 90; // High saturation for vibrant colors
+const ACCENT_HUE = 160; // Teal accent for medical theme
 
-// Neutral Color Palette (Dark Mode Base)
-const neutralsDark = {
-  // Background shades (darkest to lightest)
-  background: `hsl(${BASE_HUE}, 5%, 0%)`, // Pure black base
-  surface: `hsl(${BASE_HUE}, 5%, 5%)`, // Surface elements
-  surfaceHighlight: `hsl(${BASE_HUE}, 5%, 10%)`, // Highlighted surfaces
-  border: `hsl(${BASE_HUE}, 5%, 15%)`, // Borders and dividers
-  borderHighlight: `hsl(${BASE_HUE}, 5%, 20%)`, // Active borders
-
-  // Text shades (muted to high contrast)
-  textMuted: `hsl(${BASE_HUE}, 5%, 50%)`, // Secondary text
-  textSecondary: `hsl(${BASE_HUE}, 5%, 70%)`, // Regular text
-  textPrimary: `hsl(${BASE_HUE}, 5%, 90%)`, // Primary text
-  textHighContrast: `hsl(${BASE_HUE}, 5%, 100%)`, // Headings
-};
-
-// Neutral Color Palette (Light Mode - inverted lightness)
+// Neutral Color Palette (Light Mode - Primary)
 const neutralsLight = {
-  background: `hsl(${BASE_HUE}, 5%, 100%)`, // Pure white base
-  surface: `hsl(${BASE_HUE}, 5%, 95%)`, // Surface elements
-  surfaceHighlight: `hsl(${BASE_HUE}, 5%, 90%)`, // Highlighted surfaces
-  border: `hsl(${BASE_HUE}, 5%, 85%)`, // Borders and dividers
-  borderHighlight: `hsl(${BASE_HUE}, 5%, 80%)`, // Active borders
+  // Background shades (lightest to darker)
+  background: 'hsl(210, 20%, 98%)', // Soft white with blue tint
+  surface: 'hsl(210, 25%, 96%)', // Card surfaces
+  surfaceHighlight: 'hsl(210, 30%, 94%)', // Highlighted surfaces
+  surfaceElevated: 'hsl(210, 35%, 92%)', // Elevated surfaces
+  border: 'hsl(210, 20%, 88%)', // Subtle borders
+  borderHighlight: 'hsl(210, 25%, 82%)', // Active borders
 
-  textMuted: `hsl(${BASE_HUE}, 5%, 50%)`, // Secondary text
-  textSecondary: `hsl(${BASE_HUE}, 5%, 30%)`, // Regular text
-  textPrimary: `hsl(${BASE_HUE}, 5%, 10%)`, // Primary text
-  textHighContrast: `hsl(${BASE_HUE}, 5%, 0%)`, // Headings
+  // Text shades (high contrast to muted)
+  textHighContrast: 'hsl(210, 15%, 8%)', // Headings
+  textPrimary: 'hsl(210, 12%, 16%)', // Primary text
+  textSecondary: 'hsl(210, 10%, 40%)', // Secondary text
+  textMuted: 'hsl(210, 8%, 60%)', // Muted text
+  textDisabled: 'hsl(210, 5%, 75%)', // Disabled text
 };
 
-// Primary Brand Colors
+// Neutral Color Palette (Dark Mode)
+const neutralsDark = {
+  background: 'hsl(210, 15%, 6%)', // Deep dark blue
+  surface: 'hsl(210, 18%, 10%)', // Surface elements
+  surfaceHighlight: 'hsl(210, 20%, 14%)', // Highlighted surfaces
+  surfaceElevated: 'hsl(210, 22%, 18%)', // Elevated surfaces
+  border: 'hsl(210, 15%, 22%)', // Borders and dividers
+  borderHighlight: 'hsl(210, 18%, 28%)', // Active borders
+
+  textHighContrast: 'hsl(210, 20%, 98%)', // Headings
+  textPrimary: 'hsl(210, 15%, 90%)', // Primary text
+  textSecondary: 'hsl(210, 12%, 70%)', // Secondary text
+  textMuted: 'hsl(210, 10%, 50%)', // Muted text
+  textDisabled: 'hsl(210, 8%, 35%)', // Disabled text
+};
+
+// Primary Brand Colors - Medical Blue
 const primary = {
-  50: `hsl(${BASE_HUE}, ${BASE_SATURATION}%, 95%)`,
-  100: `hsl(${BASE_HUE}, ${BASE_SATURATION}%, 90%)`,
-  200: `hsl(${BASE_HUE}, ${BASE_SATURATION}%, 80%)`,
-  300: `hsl(${BASE_HUE}, ${BASE_SATURATION}%, 70%)`,
-  400: `hsl(${BASE_HUE}, ${BASE_SATURATION}%, 60%)`,
-  500: `hsl(${BASE_HUE}, ${BASE_SATURATION}%, 50%)`, // Base primary
-  600: `hsl(${BASE_HUE}, ${BASE_SATURATION}%, 40%)`,
-  700: `hsl(${BASE_HUE}, ${BASE_SATURATION}%, 30%)`,
-  800: `hsl(${BASE_HUE}, ${BASE_SATURATION}%, 20%)`,
-  900: `hsl(${BASE_HUE}, ${BASE_SATURATION}%, 10%)`,
+  50: 'hsl(210, 100%, 97%)',
+  100: 'hsl(210, 95%, 93%)',
+  200: 'hsl(210, 90%, 85%)',
+  300: 'hsl(210, 85%, 75%)',
+  400: 'hsl(210, 80%, 65%)',
+  500: 'hsl(210, 75%, 55%)', // Base primary - medical blue
+  600: 'hsl(210, 70%, 48%)',
+  700: 'hsl(210, 65%, 40%)',
+  800: 'hsl(210, 60%, 32%)',
+  900: 'hsl(210, 55%, 24%)',
 };
 
-// Semantic Colors
+// Secondary Colors - Medical Teal
+const secondary = {
+  50: 'hsl(160, 85%, 95%)',
+  100: 'hsl(160, 80%, 88%)',
+  200: 'hsl(160, 75%, 78%)',
+  300: 'hsl(160, 70%, 68%)',
+  400: 'hsl(160, 65%, 58%)',
+  500: 'hsl(160, 60%, 48%)', // Base secondary
+  600: 'hsl(160, 55%, 40%)',
+  700: 'hsl(160, 50%, 32%)',
+  800: 'hsl(160, 45%, 24%)',
+  900: 'hsl(160, 40%, 18%)',
+};
+
+// Semantic Colors - Enhanced for medical context
 const semantic = {
-  // Success (Green)
+  // Success (Medical Green)
   success: {
-    light: 'hsl(142, 76%, 36%)',
-    DEFAULT: 'hsl(142, 71%, 45%)',
-    dark: 'hsl(142, 76%, 36%)',
+    50: 'hsl(145, 85%, 95%)',
+    100: 'hsl(145, 80%, 88%)',
+    500: 'hsl(145, 70%, 45%)', // Default
+    600: 'hsl(145, 75%, 38%)',
+    700: 'hsl(145, 80%, 32%)',
+    light: 'hsl(145, 75%, 52%)',
+    DEFAULT: 'hsl(145, 70%, 45%)',
+    dark: 'hsl(145, 80%, 32%)',
   },
 
-  // Warning (Amber)
+  // Warning (Medical Amber)
   warning: {
-    light: 'hsl(43, 96%, 56%)',
-    DEFAULT: 'hsl(38, 92%, 50%)',
-    dark: 'hsl(32, 95%, 44%)',
+    50: 'hsl(45, 95%, 95%)',
+    100: 'hsl(45, 90%, 88%)',
+    500: 'hsl(45, 85%, 55%)', // Default
+    600: 'hsl(45, 80%, 48%)',
+    700: 'hsl(45, 75%, 40%)',
+    light: 'hsl(45, 90%, 62%)',
+    DEFAULT: 'hsl(45, 85%, 55%)',
+    dark: 'hsl(45, 75%, 40%)',
   },
 
-  // Error (Red)
+  // Error (Medical Red)
   error: {
-    light: 'hsl(0, 84%, 60%)',
-    DEFAULT: 'hsl(0, 72%, 51%)',
-    dark: 'hsl(0, 74%, 42%)',
+    50: 'hsl(0, 90%, 95%)',
+    100: 'hsl(0, 85%, 88%)',
+    500: 'hsl(0, 75%, 55%)', // Default
+    600: 'hsl(0, 80%, 48%)',
+    700: 'hsl(0, 85%, 40%)',
+    light: 'hsl(0, 80%, 62%)',
+    DEFAULT: 'hsl(0, 75%, 55%)',
+    dark: 'hsl(0, 85%, 40%)',
   },
 
-  // Info (Blue)
+  // Info (Light Blue)
   info: {
-    light: 'hsl(204, 94%, 94%)',
-    DEFAULT: 'hsl(204, 100%, 97%)',
-    dark: 'hsl(204, 94%, 94%)',
+    50: 'hsl(200, 95%, 95%)',
+    100: 'hsl(200, 90%, 88%)',
+    500: 'hsl(200, 85%, 60%)', // Default
+    600: 'hsl(200, 80%, 52%)',
+    700: 'hsl(200, 75%, 44%)',
+    light: 'hsl(200, 90%, 68%)',
+    DEFAULT: 'hsl(200, 85%, 60%)',
+    dark: 'hsl(200, 75%, 44%)',
   },
 };
 
-// Export color palettes
+// Export comprehensive color system
 export const colors = {
   // Theme-based neutrals
   light: neutralsLight,
@@ -92,6 +131,7 @@ export const colors = {
 
   // Brand colors
   primary,
+  secondary,
 
   // Semantic colors
   ...semantic,
@@ -100,15 +140,25 @@ export const colors = {
   transparent: 'transparent',
   white: '#ffffff',
   black: '#000000',
+
+  // Medical theme specific colors
+  medical: {
+    primary: primary[500],
+    secondary: secondary[500],
+    accent: 'hsl(280, 70%, 60%)', // Purple accent
+    emergency: 'hsl(0, 85%, 50%)', // Emergency red
+    safe: 'hsl(145, 70%, 45%)', // Safe green
+  },
 };
 
-// Color tokens for easy access
+// Enhanced color tokens for easy access
 export const colorTokens = {
   // Background tokens
   bg: {
     primary: 'background',
     secondary: 'surface',
     tertiary: 'surfaceHighlight',
+    elevated: 'surfaceElevated',
   },
 
   // Text tokens
@@ -117,6 +167,7 @@ export const colorTokens = {
     secondary: 'textSecondary',
     muted: 'textMuted',
     contrast: 'textHighContrast',
+    disabled: 'textDisabled',
   },
 
   // Border tokens
@@ -130,6 +181,16 @@ export const colorTokens = {
     primary: 'primary.500',
     primaryHover: 'primary.600',
     primaryActive: 'primary.700',
+    secondary: 'secondary.500',
+    secondaryHover: 'secondary.600',
+  },
+
+  // Status tokens
+  status: {
+    success: 'success.DEFAULT',
+    warning: 'warning.DEFAULT',
+    error: 'error.DEFAULT',
+    info: 'info.DEFAULT',
   },
 };
 

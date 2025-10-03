@@ -1,10 +1,5 @@
-import axios from "axios"
-
-
+import axios from 'axios';
 
 export const apiInstance = axios.create({
-    baseURL:"localhost:3005/api/v1",
-})
-
-
-
+  baseURL: 'http://192.168.31.67:3005/api/v1',
+});

@@ -1,97 +1,181 @@
 /**
  * Login Screen
- * User authentication with form validation using established patterns
+ * OTP-based authentication with proper keyboard handling
  */
 
-import React, { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import React, { useState, useEffect } from 'react';
 import {
-  Screen,
-  Container,
-  Card,
-  Column,
-  Row,
-  Input,
-  Button,
-  Heading2,
+  View,
+  StyleSheet,
+  StatusBar,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  TouchableWithoutFeedback,
+  Keyboard,
+  Alert,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import {
   BodyText,
-  Spacer,
-  Divider,
+  Heading2,
+  Heading3,
+  Typography,
+  Caption,
+  Button,
+  Card,
+  Row,
+  Column,
+  spacing,
+  colors,
+  borderRadius,
+  shadows,
+  typography,
 } from '@components';
 import AuthService from '@services/AuthService';
 import { navigate } from '@utils/NavigationUtils';
+import { useAuthStore, setToken as setGlobalToken } from '@store/AuthStore';
 
 // Login interfaces are now in AuthService
 
 export const LoginScreen: React.FC = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [emailError, setEmailError] = useState('');
-  const [passwordError, setPasswordError] = useState('');
+  const [phone, setPhone] = useState('');
+  const [otp, setOtp] = useState('');
+  const [phoneError, setPhoneError] = useState('');
+  const [otpError, setOtpError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [resendTimer, setResendTimer] = useState(0);
+  const { setUser, setToken } = useAuthStore();
 
-  const validateEmail = (email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+  // Timer for resend OTP
+  useEffect(() => {
+    let interval: number;
+    if (resendTimer > 0) {
+      interval = setInterval(() => {
+        setResendTimer(prev => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [resendTimer]);
+
+  const validatePhone = (phone: string) => {
+    const phoneRegex = /^[6-9]\d{9}$/;
+    return phoneRegex.test(phone);
   };
 
-  const handleEmailChange = (text: string) => {
-    setEmail(text);
-    if (emailError) setEmailError('');
+  const handlePhoneChange = (text: string) => {
+    // Remove any non-numeric characters
+    const numericText = text.replace(/[^0-9]/g, '');
+    setPhone(numericText);
+    if (phoneError) setPhoneError('');
   };
 
-  const handlePasswordChange = (text: string) => {
-    setPassword(text);
-    if (passwordError) setPasswordError('');
+  const handleOtpChange = (text: string) => {
+    // Remove any non-numeric characters and limit to 6 digits
+    const numericText = text.replace(/[^0-9]/g, '').slice(0, 6);
+    setOtp(numericText);
+    if (otpError) setOtpError('');
   };
 
-  const handleLogin = async () => {
+  const handleGenerateOtp = async () => {
+    // Dismiss keyboard
+    Keyboard.dismiss();
+
     // Reset errors
-    setEmailError('');
-    setPasswordError('');
+    setPhoneError('');
 
     // Validation
-    let hasErrors = false;
-
-    if (!email) {
-      setEmailError('Email is required');
-      hasErrors = true;
-    } else if (!validateEmail(email)) {
-      setEmailError('Please enter a valid email address');
-      hasErrors = true;
+    if (!phone) {
+      setPhoneError('Phone number is required');
+      return;
     }
 
-    if (!password) {
-      setPasswordError('Password is required');
-      hasErrors = true;
-    } else if (password.length < 6) {
-      setPasswordError('Password must be at least 6 characters');
-      hasErrors = true;
+    if (!validatePhone(phone)) {
+      setPhoneError('Please enter a valid 10-digit phone number');
+      return;
     }
-
-    if (hasErrors) return;
 
     setIsLoading(true);
 
     try {
-      // Use AuthService for login with role-based navigation
-      const response = await AuthService.login(email, password);
-
+      const response = await AuthService.generateOtp(phone);
       if (response.success) {
-        // AuthService handles token storage and role-based navigation
-        // No need to manually navigate - it's handled in AuthService.login()
+        setOtpSent(true);
+        setResendTimer(30); // 30 seconds timer
+        Alert.alert('OTP Sent', 'Please check your phone for the OTP');
       } else {
-        Alert.alert('Login Failed', response.message);
+        Alert.alert('Error', response.message || 'Failed to send OTP');
       }
-    } catch (error) {
-      Alert.alert('Error', 'Login failed. Please try again.');
+    } catch (error: any) {
+      Alert.alert(
+        'Error',
+        error.message || 'Failed to send OTP. Please try again.',
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleForgotPassword = () => {
-    Alert.alert('Forgot Password', 'Password reset functionality coming soon!');
+  const handleLogin = async () => {
+    // Dismiss keyboard
+    Keyboard.dismiss();
+
+    // Reset errors
+    setOtpError('');
+
+    // Validation
+    if (!otp) {
+      setOtpError('OTP is required');
+      return;
+    }
+
+    if (otp.length !== 6) {
+      setOtpError('Please enter a valid 6-digit OTP');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const response = await AuthService.loginWithOtp(phone, otp);
+      console.log(response);
+      if (response.success && response.data) {
+        // AuthService already handles token storage and user state
+        // Navigate to home screen
+        navigate('HomeScreen');
+        Alert.alert('Success', 'Login successful!');
+      } else {
+        Alert.alert('Login Failed', response.message || 'Invalid OTP');
+      }
+    } catch (error: any) {
+      console.error('Login error:', error);
+      Alert.alert('Error', error.message || 'Login failed. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    if (resendTimer > 0) return;
+
+    setIsLoading(true);
+    try {
+      const response = await AuthService.generateOtp(phone);
+      if (response.success) {
+        setResendTimer(30);
+        Alert.alert('OTP Sent', 'New OTP has been sent to your phone');
+      } else {
+        Alert.alert('Error', response.message || 'Failed to resend OTP');
+      }
+    } catch (error: any) {
+      Alert.alert(
+        'Error',
+        error.message || 'Failed to resend OTP. Please try again.',
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSignUp = () => {
@@ -99,87 +183,181 @@ export const LoginScreen: React.FC = () => {
   };
 
   return (
-    <Screen scrollable>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ flex: 1 }}
+        style={styles.keyboardView}
       >
-        <Container padded centered>
-          <Card style={{ width: '100%', maxWidth: 400 }}>
-            <Column gap="lg">
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <ScrollView
+            contentContainerStyle={styles.scrollContainer}
+            keyboardShouldPersistTaps="handled"
+          >
+            <View style={styles.content}>
               {/* Header */}
-              <Column align="center" gap="sm">
-                <Heading2 color="contrast">Welcome Back</Heading2>
-                <BodyText color="secondary" style={{ textAlign: 'center' }}>
-                  Sign in to your MedCo account
+              <View style={styles.header}>
+                <Heading2 color="primary" style={styles.title}>
+                  Welcome to MedCo
+                </Heading2>
+                <BodyText color="secondary" style={styles.subtitle}>
+                  {otpSent
+                    ? 'Enter the OTP sent to your phone'
+                    : 'Enter your phone number to continue'}
                 </BodyText>
-              </Column>
+              </View>
 
-              <Divider />
-
-              {/* Form */}
-              <Column gap="md">
-                <Input
-                  label="Email Address"
-                  value={email}
-                  onChangeText={handleEmailChange}
-                  placeholder="Enter your email"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoComplete="email"
-                  errorText={emailError}
-                  state={emailError ? 'error' : 'default'}
-                />
-
-                <Input
-                  label="Password"
-                  value={password}
-                  onChangeText={handlePasswordChange}
-                  placeholder="Enter your password"
-                  secureTextEntry
-                  autoComplete="password"
-                  errorText={passwordError}
-                  state={passwordError ? 'error' : 'default'}
-                />
-
-                <Row justify="flex-end">
-                  <Button
-                    title="Forgot Password?"
-                    variant="ghost"
-                    size="sm"
-                    onPress={handleForgotPassword}
+              {/* Form Card */}
+              <Card style={styles.formCard}>
+                <Column gap="lg">
+                  {/* Phone Input */}
+                  <Input
+                    label="Phone Number"
+                    value={phone}
+                    onChangeText={handlePhoneChange}
+                    placeholder="Enter 10-digit phone number"
+                    keyboardType="phone-pad"
+                    maxLength={10}
+                    errorText={phoneError}
+                    state={phoneError ? 'error' : 'default'}
+                    editable={!otpSent}
                   />
-                </Row>
-              </Column>
 
-              {/* Actions */}
-              <Column gap="md">
+                  {/* OTP Input - Only show when OTP is sent */}
+                  {otpSent && (
+                    <Input
+                      label="OTP"
+                      value={otp}
+                      onChangeText={handleOtpChange}
+                      placeholder="Enter 6-digit OTP"
+                      keyboardType="number-pad"
+                      maxLength={6}
+                      errorText={otpError}
+                      state={otpError ? 'error' : 'default'}
+                    />
+                  )}
+
+                  {/* Resend OTP */}
+                  {otpSent && (
+                    <Row justify="space-between" align="center">
+                      <BodyText color="secondary">Didn't receive OTP?</BodyText>
+                      <Button
+                        title={
+                          resendTimer > 0
+                            ? `Resend in ${resendTimer}s`
+                            : 'Resend OTP'
+                        }
+                        variant="ghost"
+                        size="sm"
+                        onPress={handleResendOtp}
+                        disabled={resendTimer > 0 || isLoading}
+                      />
+                    </Row>
+                  )}
+
+                  {/* Action Button */}
+                  <Button
+                    title={
+                      isLoading
+                        ? otpSent
+                          ? 'Verifying...'
+                          : 'Sending OTP...'
+                        : otpSent
+                        ? 'Verify & Login'
+                        : 'Send OTP'
+                    }
+                    onPress={otpSent ? handleLogin : handleGenerateOtp}
+                    loading={isLoading}
+                    disabled={isLoading}
+                    fullWidth
+                  />
+
+                  {/* Change Phone Number */}
+                  {otpSent && (
+                    <Button
+                      title="Change Phone Number"
+                      variant="ghost"
+                      size="sm"
+                      onPress={() => {
+                        setOtpSent(false);
+                        setOtp('');
+                        setOtpError('');
+                        setResendTimer(0);
+                      }}
+                    />
+                  )}
+                </Column>
+              </Card>
+
+              {/* Sign Up Link */}
+              <Row
+                justify="center"
+                align="center"
+                gap="sm"
+                style={styles.signupRow}
+              >
+                <BodyText color="secondary">Don't have an account?</BodyText>
                 <Button
-                  title={isLoading ? 'Signing In...' : 'Sign In'}
-                  onPress={handleLogin}
-                  loading={isLoading}
-                  disabled={isLoading}
-                  fullWidth
+                  title="Sign Up"
+                  variant="ghost"
+                  size="sm"
+                  onPress={handleSignUp}
                 />
-
-                <Divider />
-
-                <Row justify="center" gap="xs">
-                  <BodyText color="secondary">Don't have an account?</BodyText>
-                  <Button
-                    title="Sign Up"
-                    variant="ghost"
-                    size="sm"
-                    onPress={handleSignUp}
-                  />
-                </Row>
-              </Column>
-            </Column>
-          </Card>
-        </Container>
+              </Row>
+            </View>
+          </ScrollView>
+        </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
-    </Screen>
+    </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.light.background,
+  },
+  keyboardView: {
+    flex: 1,
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.xxl,
+  },
+  content: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: spacing.xxxl,
+  },
+  title: {
+    textAlign: 'center',
+    marginBottom: spacing.sm,
+    color: colors.primary[600],
+  },
+  subtitle: {
+    textAlign: 'center',
+    paddingHorizontal: spacing.lg,
+    color: colors.light.textSecondary,
+  },
+  formCard: {
+    backgroundColor: colors.white,
+    borderRadius: borderRadius.xl,
+    padding: spacing.xl,
+    marginBottom: spacing.lg,
+    ...shadows.md,
+    borderWidth: 1,
+    borderColor: colors.light.border,
+  },
+  signupRow: {
+    marginTop: spacing.lg,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+});
 
 export default LoginScreen;

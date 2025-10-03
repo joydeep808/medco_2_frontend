@@ -7,8 +7,14 @@ import { navigationRef } from '@utils/NavigationUtils';
 // Import screens
 import SplashScreen from './splash/SplashScreen';
 import LoginScreen from './auth/LoginScreen';
-import HomeScreen from './customer/HomeScreen';
+import RegisterScreen from './auth/RegisterScreen';
 import ComponentShowcase from './example/ComponentShowcase';
+import HomeScreen from './home/HomeScreen';
+import ProfileScreen from './profile/ProfileScreen';
+import CartScreen from './cart/CartScreen';
+import SearchScreen from './search/SearchScreen';
+import OrderScreen from './order/OrderScreen';
+import StoreScreen from './store/StoreScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -16,12 +22,15 @@ export const AppRoutings = ({ isDark }: { isDark: boolean }) => {
   return (
     <NavigationContainer ref={navigationRef}>
       <Stack.Navigator
-        initialRouteName="HomeScreen"
+        initialRouteName="SplashScreen"
         screenOptions={{ headerShown: false }}
       >
         <Stack.Screen name="SplashScreen" component={SplashScreen} />
         <Stack.Screen name="LoginScreen" component={LoginScreen} />
+        <Stack.Screen name="Register" component={RegisterScreen} />
         <Stack.Screen name="HomeScreen" component={HomeScreen} />
+        <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
+        <Stack.Screen name="CartScreen" component={CartScreen} />
 
         {/* Add the component showcase for demo purposes */}
         <Stack.Screen
@@ -30,14 +39,11 @@ export const AppRoutings = ({ isDark }: { isDark: boolean }) => {
           options={{ headerShown: true, title: 'Design System' }}
         />
 
-        {/* Placeholder screens for navigation - you can implement these later */}
-        <Stack.Screen name="Register" component={PlaceholderScreen} />
-        <Stack.Screen name="Search" component={PlaceholderScreen} />
-        <Stack.Screen name="OrderScreen" component={PlaceholderScreen} />
-        <Stack.Screen name="ProfileScreen" component={PlaceholderScreen} />
-        <Stack.Screen name="StoreScreen" component={PlaceholderScreen} />
+        {/* Real screens */}
+        <Stack.Screen name="Search" component={SearchScreen} />
+        <Stack.Screen name="OrderScreen" component={OrderScreen} />
+        <Stack.Screen name="StoreScreen" component={StoreScreen} />
         <Stack.Screen name="Cart" component={PlaceholderScreen} />
-        <Stack.Screen name="CartScreen" component={PlaceholderScreen} />
         <Stack.Screen name="Onboarding" component={PlaceholderScreen} />
         <Stack.Screen name="OTP" component={PlaceholderScreen} />
         <Stack.Screen name="LocationSearch" component={PlaceholderScreen} />

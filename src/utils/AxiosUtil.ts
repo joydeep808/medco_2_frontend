@@ -1,6 +1,6 @@
+import { apiInstance } from "@config/_axios/AxiosConfig";
 import { ApiResponse } from "@interfaces/response/common";
 import axios, { AxiosError, AxiosResponse } from "axios";
-import { apiInstance } from "src/config/_axios/AxiosConfig";
 
 export function AxiosErrorHandler(error: unknown): ApiResponse<any> {
   if (axios.isAxiosError(error)) {
