@@ -145,7 +145,6 @@ export const CategorySection: React.FC<CategorySectionProps> = ({
         keyExtractor={item => item.id}
         horizontal
         showsHorizontalScrollIndicator={false}
-        estimatedItemSize={120}
         contentContainerStyle={styles.listContainer}
         ListFooterComponent={renderSeeAllButton}
       />

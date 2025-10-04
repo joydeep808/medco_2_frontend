@@ -29,6 +29,13 @@ export interface Pharmacy {
   estimatedDeliveryTime: number;
   createdAt: string;
   updatedAt: string;
+  // Additional properties for PharmacyCard compatibility
+  averageDeliveryTime?: number;
+  freeDeliveryAbove?: number;
+  pharmacyImageUrl?: string;
+  isOpen24x7?: boolean;
+  hasPrescriptionUpload?: boolean;
+  hasCodPayment?: boolean;
 }
 
 export interface PharmacySearchRequest {

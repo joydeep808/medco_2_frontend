@@ -9,7 +9,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useCartStore } from '@store/CartStore';
 import HomeScreen from '../screens/home/HomeScreen';
 import SearchScreen from '../screens/search/SearchScreen';
-import CartScreen from '../screens/cart/CartScreen';
+import CartScreen from '../screens/cart/CartScreen.new';
 import ProfileScreen from '../screens/profile/ProfileScreen';
 
 const Tab = createBottomTabNavigator();
@@ -70,32 +70,14 @@ export const TabNavigator: React.FC = () => {
         tabBarHideOnKeyboard: true,
       })}
     >
-      <Tab.Screen
-        name="Home"
-        component={HomeScreen}
-        options={{
-          tabBarTestID: 'home-tab',
-        }}
-      />
-      <Tab.Screen
-        name="Search"
-        component={SearchScreen}
-        options={{
-          tabBarTestID: 'search-tab',
-        }}
-      />
-      <Tab.Screen
-        name="Cart"
-        component={CartScreen}
-        options={{
-          tabBarTestID: 'cart-tab',
-        }}
-      />
+      <Tab.Screen name="Home" component={HomeScreen} options={{}} />
+      <Tab.Screen name="Search" component={SearchScreen} options={{}} />
+      <Tab.Screen name="Cart" component={CartScreen} options={{}} />
       <Tab.Screen
         name="Profile"
         component={ProfileScreen}
         options={{
-          tabBarTestID: 'profile-tab',
+          tabBarButtonTestID: 'profile-tab',
         }}
       />
     </Tab.Navigator>

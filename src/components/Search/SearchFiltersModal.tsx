@@ -14,7 +14,18 @@ import {
   Switch,
 } from 'react-native';
 import { SearchFilters } from '@store/SearchStore';
-import Slider from '@react-native-community/slider';
+// import Slider from '@react-native-community/slider'; // TODO: Install this package
+
+// Temporary Slider component until the package is installed
+const Slider = ({
+  value,
+  onValueChange,
+  minimumValue,
+  maximumValue,
+  ...props
+}: any) => (
+  <View style={{ height: 40, backgroundColor: '#f0f0f0', borderRadius: 20 }} />
+);
 
 export interface SearchFiltersModalProps {
   visible: boolean;

@@ -8,6 +8,9 @@ export type RootStackParamList = {
   StoreScreen: {
     storeId: number;
   };
+  PharmacyScreen: {
+    pharmacyId: number;
+  };
   Search: undefined;
   Cart: {
     storeId: number;
@@ -15,8 +18,14 @@ export type RootStackParamList = {
   Onboarding: undefined;
   OTP: undefined;
 
+  // Cart routes
   CartScreen: {
-    storeId: number;
+    pharmacyId?: number; // Optional - if provided, shows single pharmacy cart
+  };
+  AllCartsScreen: undefined; // Shows all pharmacy carts
+
+  CheckoutScreen: {
+    pharmacyId: string;
   };
   LocationSearch: undefined;
   ProfileScreen: undefined;

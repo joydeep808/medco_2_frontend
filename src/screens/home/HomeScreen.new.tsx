@@ -12,7 +12,7 @@ import { BodyText, Heading2, Button } from '@components';
 import { useAuthStore } from '@store/AuthStore';
 import { useLocationStore } from '@store/LocationStore';
 import { usePharmacyStore } from '@store/PharmacyStore.new';
-import { useCartStore } from '@store/CartStore.new';
+import useCartStore from '@store/CartStore.new';
 import { useSearchStore } from '@store/SearchStore';
 import { navigate } from '@utils/NavigationUtils';
 import BannerCarousel from '../../components/Banner/BannerCarousel';
@@ -25,7 +25,21 @@ const HomeScreen: React.FC = () => {
     isLoading: pharmacyLoading,
     fetchNearbyPharmacies,
   } = usePharmacyStore();
-  const { getTotalItems, getTotalAmount } = useCartStore();
+  const { carts } = useCartStore();
+
+  const getTotalItems = () => {
+    return Object.values(carts).reduce(
+      (total, cart) => total + cart.totalQuantity,
+      0,
+    );
+  };
+
+  const getTotalAmount = () => {
+    return Object.values(carts).reduce(
+      (total, cart) => total + cart.finalAmount,
+      0,
+    );
+  };
   const { getTrendingSearches, trendingSearches } = useSearchStore();
 
   const [refreshing, setRefreshing] = useState(false);
@@ -34,17 +48,23 @@ const HomeScreen: React.FC = () => {
       id: '1',
       title: 'Free Delivery',
       subtitle: 'On orders above ₹500',
-      image:
+      imageUrl:
         'https://via.placeholder.com/400x200/007AFF/FFFFFF?text=Free+Delivery',
-      action: { type: 'navigate', screen: 'Search' },
+      actionType: 'navigate' as const,
+      actionData: { screen: 'Search' },
+      isActive: true,
+      priority: 1,
     },
     {
       id: '2',
       title: '24/7 Service',
       subtitle: 'Emergency medicines available',
-      image:
+      imageUrl:
         'https://via.placeholder.com/400x200/34C759/FFFFFF?text=24/7+Service',
-      action: { type: 'navigate', screen: 'StoreScreen' },
+      actionType: 'navigate' as const,
+      actionData: { screen: 'StoreScreen' },
+      isActive: true,
+      priority: 2,
     },
   ]);
 
@@ -86,7 +106,7 @@ const HomeScreen: React.FC = () => {
         <View style={styles.headerContent}>
           <View>
             <Heading2 color="primary" size="md">
-              {isUserLoggedIn ? `Hi, ${user?.firstName}!` : 'Welcome!'}
+              {isUserLoggedIn ? `Hi, ${user?.name || 'User'}!` : 'Welcome!'}
             </Heading2>
             <BodyText color="secondary" size="sm">
               {currentLocation

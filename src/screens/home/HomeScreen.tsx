@@ -6,33 +6,31 @@ import {
   ScrollView,
   RefreshControl,
   TouchableOpacity,
-  ActivityIndicator,
+  Image,
 } from 'react-native';
+import { BodyText, Heading2, Button, spacing, borderRadius } from '@components';
+import { ThemeManager, createThemedStyles } from '../../styles/colors';
 import {
-  BodyText,
-  Heading2,
-  Button,
-  spacing,
-  colors,
-  borderRadius,
-  shadows,
-} from '@components';
-import { useAuthStore } from '@store/AuthStore';
+  ShadowSystem,
+  InteractiveShadows,
+  MedicalShadows,
+} from '../../styles/shadows';
 import { useLocationStore } from '@store/LocationStore';
-import { useCartStore } from '@store/CartStore';
+import useCartStore from '@store/CartStore.new';
+import FloatingCartButton from '@components/Cart/FloatingCartButton';
 import { navigate } from '@utils/NavigationUtils';
 import BannerCarousel, { Banner } from '../../components/Banner/BannerCarousel';
 import { PharmacyService } from '@services/PharmacyService';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { FlashList } from '@shopify/flash-list';
 
 export const HomeScreen: React.FC = () => {
-  const { isUserLoggedIn } = useAuthStore();
   const { currentLocation } = useLocationStore();
-  const { getCartPreview } = useCartStore();
+  const { getCartPreview, loadAllCarts, getCartItemCount, getCartTotal } =
+    useCartStore();
 
-  // Local state for pharmacies and loading
+  // Local state for pharmacies
   const [nearbyPharmacies, setNearbyPharmacies] = useState<any[]>([]);
-  const [pharmacyLoading, setPharmacyLoading] = useState(false);
   const [trendingSearches] = useState([
     'Paracetamol',
     'Vitamin D',
@@ -77,11 +75,13 @@ export const HomeScreen: React.FC = () => {
   // Also load on component mount
   useEffect(() => {
     loadInitialData();
+    loadAllCarts()
   }, []);
 
   const loadInitialData = async () => {
     // Always try to fetch pharmacies, with fallback coordinates if needed
     await fetchNearbyPharmacies();
+    // Load user carts
   };
 
   const calculateDistance = (
@@ -104,14 +104,12 @@ export const HomeScreen: React.FC = () => {
   };
 
   const fetchNearbyPharmacies = async () => {
-    setPharmacyLoading(true);
     try {
       // Use current location if available, otherwise use default coordinates for Agartala
       const lat = currentLocation?.latitude || 23.8315;
       const lng = currentLocation?.longitude || 91.2868;
 
-
-      const response = await PharmacyService.getNearbyPharmacies(lat, lng, 15)
+      const response = await PharmacyService.getNearbyPharmacies(lat, lng, 15);
       if (response.success && response.data) {
         const pharmaciesWithDistance = response.data.content.map(
           (pharmacy: any) => ({
@@ -129,8 +127,6 @@ export const HomeScreen: React.FC = () => {
       }
     } catch (error) {
       console.error('Failed to fetch nearby pharmacies:', error);
-    } finally {
-      setPharmacyLoading(false);
     }
   };
 
@@ -146,74 +142,89 @@ export const HomeScreen: React.FC = () => {
     }
   };
 
+  const totalItems = getCartItemCount();
+  const totalAmount = getCartTotal();
   const cartPreview = getCartPreview();
-  const totalItems = cartPreview.reduce((sum, cart) => sum + cart.itemCount, 0);
-  const totalAmount = cartPreview.reduce((sum, cart) => sum + cart.total, 0);
+  const theme = ThemeManager.getCurrentThemeConfig();
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles(theme).container}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
 
-      {/* Location Header */}
-      <View style={styles.locationHeader}>
+      {/* Modern Header */}
+      <View style={styles(theme).modernHeader}>
         <TouchableOpacity
-          style={styles.locationButton}
+          style={styles(theme).locationButton}
           onPress={() => navigate('LocationSearch')}
         >
-          <View style={styles.locationContent}>
-            <BodyText color="secondary" size="sm">
+          <View style={styles(theme).locationContent}>
+            <BodyText color="secondary" size="xs">
               Deliver to
             </BodyText>
-            <View style={styles.locationRow}>
-              <BodyText color="primary" weight="bold" size="md">
-                📍{' '}
-                {currentLocation
-                  ? `${currentLocation.area || 'Current Location'}`
-                  : 'Select Location'}
+            <View style={styles(theme).locationRow}>
+              <BodyText color="primary" weight="bold" size="sm">
+                📍 {currentLocation?.area || 'Select Location'}
               </BodyText>
-              <BodyText color="secondary" size="sm">
+              <BodyText color="secondary" size="xs">
                 ▼
               </BodyText>
             </View>
           </View>
         </TouchableOpacity>
 
-        <View style={styles.headerButtons}>
-          <Button
-            title="Profile"
-            variant="ghost"
-            size="sm"
+        <View style={styles(theme).headerActions}>
+          <TouchableOpacity
+            style={styles(theme).headerIconButton}
             onPress={() => navigate('ProfileScreen')}
-          />
-          <Button
-            title={`Cart (${totalItems})`}
-            variant="ghost"
-            size="sm"
+          >
+            <BodyText style={styles(theme).headerIcon}>👤</BodyText>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles(theme).headerIconButton,
+              totalItems > 0 && styles(theme).cartWithItems,
+            ]}
             onPress={() => navigate('CartScreen')}
-          />
+          >
+            <BodyText style={styles(theme).headerIcon}>🛒</BodyText>
+            {totalItems > 0 && (
+              <View style={styles(theme).cartBadge}>
+                <BodyText color="white" size="xs" weight="bold">
+                  {totalItems}
+                </BodyText>
+              </View>
+            )}
+          </TouchableOpacity>
         </View>
       </View>
 
-      {/* Search Bar */}
-      <View style={styles.searchContainer}>
+      {/* Modern Search Bar */}
+      <View style={styles(theme).searchContainer}>
         <TouchableOpacity
-          style={styles.searchBar}
+          style={styles(theme).modernSearchBar}
           onPress={() => navigate('Search')}
+          activeOpacity={0.7}
         >
-          <BodyText color="secondary">
-            🔍 Search medicines, pharmacies...
+          <View style={styles(theme).searchIcon}>
+            <BodyText style={styles(theme).searchIconText}>🔍</BodyText>
+          </View>
+          <BodyText color="secondary" style={styles(theme).searchPlaceholder}>
+            Search medicines, pharmacies...
           </BodyText>
+          <View style={styles(theme).searchFilter}>
+            <BodyText style={styles(theme).filterIcon}>⚙️</BodyText>
+          </View>
         </TouchableOpacity>
       </View>
 
       <ScrollView
-        style={styles.scrollView}
+        style={styles(theme).scrollView}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            colors={[colors.primary[500]]}
+            colors={[theme.colors.interactive.primary]}
           />
         }
       >
@@ -221,45 +232,47 @@ export const HomeScreen: React.FC = () => {
         <BannerCarousel
           banners={banners}
           onBannerPress={handleBannerPress}
-          style={styles.bannerCarousel}
+          style={styles(theme).bannerCarousel}
         />
 
-        {/* Quick Navigation */}
-        <View style={styles.quickNavigation}>
-          <Button
-            title="🔍 Search Medicines"
-            variant="ghost"
-            size="md"
+        {/* Quick Actions Grid */}
+        <View style={styles(theme).quickActionsGrid}>
+          <TouchableOpacity
+            style={styles(theme).quickActionCard}
             onPress={() => navigate('Search')}
-            style={styles.navButton}
-          />
-          <Button
-            title="🏪 Find Pharmacies"
-            variant="ghost"
-            size="md"
+          >
+            <View style={styles(theme).quickActionIcon}>
+              <BodyText style={styles(theme).quickActionEmoji}>🔍</BodyText>
+            </View>
+            <BodyText color="primary" weight="medium" size="sm">
+              Search Medicines
+            </BodyText>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles(theme).quickActionCard}
             onPress={() => navigate('StoreScreen')}
-            style={styles.navButton}
-          />
-          <Button
-            title="📋 My Orders"
-            variant="ghost"
-            size="md"
-            onPress={() => navigate('OrderScreen')}
-            style={styles.navButton}
-          />
+          >
+            <View style={styles(theme).quickActionIcon}>
+              <BodyText style={styles(theme).quickActionEmoji}>🏪</BodyText>
+            </View>
+            <BodyText color="primary" weight="medium" size="sm">
+              Find Pharmacies
+            </BodyText>
+          </TouchableOpacity>
         </View>
 
         {/* Trending Searches */}
         {trendingSearches.length > 0 && (
-          <View style={styles.section}>
-            <Heading2 color="primary" style={styles.sectionTitle}>
+          <View style={styles(theme).section}>
+            <Heading2 color="primary" style={styles(theme).sectionTitle}>
               Trending Searches
             </Heading2>
-            <View style={styles.trendingContainer}>
+            <View style={styles(theme).trendingContainer}>
               {trendingSearches.slice(0, 6).map((search, index) => (
                 <TouchableOpacity
                   key={index}
-                  style={styles.trendingItem}
+                  style={styles(theme).trendingItem}
                   onPress={() => navigate('Search', { query: search })}
                 >
                   <BodyText color="primary" size="sm">
@@ -272,12 +285,12 @@ export const HomeScreen: React.FC = () => {
         )}
 
         {/* Nearby Pharmacies */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
+        <View style={styles(theme).section}>
+          <View style={styles(theme).sectionHeader}>
             <Heading2 color="primary">
               Nearby Pharmacies ({nearbyPharmacies.length})
             </Heading2>
-            <View style={styles.headerActions}>
+            <View style={styles(theme).headerActions}>
               <Button
                 title="Refresh"
                 variant="ghost"
@@ -293,34 +306,39 @@ export const HomeScreen: React.FC = () => {
             </View>
           </View>
 
-          {pharmacyLoading ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={colors.primary[500]} />
-              <BodyText color="secondary" style={styles.loadingText}>
-                Loading pharmacies...
-              </BodyText>
-            </View>
-          ) : nearbyPharmacies.length > 0 ? (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {nearbyPharmacies.slice(0, 5).map(pharmacy => (
+          {nearbyPharmacies && (
+            <FlashList
+              data={nearbyPharmacies}
+              keyExtractor={(_, i) => i.toString()}
+              renderItem={({ item: pharmacy }) => (
                 <TouchableOpacity
                   key={pharmacy.id}
-                  style={styles.pharmacyCard}
+                  style={styles(theme).modernPharmacyCard}
                   onPress={() =>
-                    navigate('PharmacyDetails', { pharmacyId: pharmacy.id })
+                    navigate('PharmacyScreen', { pharmacyId: pharmacy.id })
                   }
                 >
-                  <View style={styles.pharmacyHeader}>
-                    <Heading2 color="primary" style={styles.pharmacyName}>
-                      {pharmacy.name}
-                    </Heading2>
+                  <View style={styles(theme).pharmacyImageContainer}>
+                    {pharmacy.pharmacyImageUrl ? (
+                      <Image
+                        source={{ uri: pharmacy.pharmacyImageUrl }}
+                        style={styles(theme).pharmacyImage}
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <View style={styles(theme).pharmacyImagePlaceholder}>
+                        <BodyText style={styles(theme).pharmacyImageIcon}>
+                          🏥
+                        </BodyText>
+                      </View>
+                    )}
                     <View
                       style={[
-                        styles.statusBadge,
+                        styles(theme).modernStatusBadge,
                         {
                           backgroundColor: pharmacy.isOpen
-                            ? colors.success.DEFAULT
-                            : colors.error.DEFAULT,
+                            ? theme.colors.status.success
+                            : theme.colors.status.error,
                         },
                       ]}
                     >
@@ -330,330 +348,349 @@ export const HomeScreen: React.FC = () => {
                     </View>
                   </View>
 
-                  <BodyText color="secondary" style={styles.pharmacyAddress}>
-                    📍 {pharmacy.address}
-                  </BodyText>
-
-                  <View style={styles.pharmacyDetails}>
-                    <BodyText color="secondary" size="sm">
-                      ⭐ {pharmacy.rating.toFixed(1)} ({pharmacy.totalRatings}{' '}
-                      reviews)
-                    </BodyText>
-                    <BodyText color="secondary" size="sm">
-                      📏 {pharmacy.distance?.toFixed(1)} km away
-                    </BodyText>
-                  </View>
-
-                  <View style={styles.deliveryInfo}>
-                    <BodyText color="primary" size="sm" weight="medium">
-                      🚚 ₹{pharmacy.deliveryFee} delivery
-                    </BodyText>
-                    <BodyText color="secondary" size="sm">
-                      ⏱️ {pharmacy.averageDeliveryTime} mins
-                    </BodyText>
-                  </View>
-
-                  {pharmacy.freeDeliveryAbove && (
+                  <View style={styles(theme).pharmacyCardContent}>
                     <BodyText
-                      color="success"
-                      size="xs"
-                      style={styles.freeDelivery}
+                      color="primary"
+                      weight="bold"
+                      size="md"
+                      numberOfLines={1}
                     >
-                      Free delivery above ₹{pharmacy.freeDeliveryAbove}
+                      {pharmacy.name}
                     </BodyText>
-                  )}
 
-                  <View style={styles.pharmacyFeatures}>
-                    {pharmacy.isOpen24x7 && (
-                      <View style={styles.featureBadge}>
-                        <BodyText color="primary" size="xs">
-                          24/7
+                    <BodyText
+                      color="secondary"
+                      size="xs"
+                      numberOfLines={2}
+                      style={styles(theme).pharmacyCardAddress}
+                    >
+                      📍 {pharmacy.address}
+                    </BodyText>
+
+                    <View style={styles(theme).pharmacyCardMeta}>
+                      <View style={styles(theme).ratingContainer}>
+                        <BodyText color="warning" size="xs">
+                          ⭐
+                        </BodyText>
+                        <BodyText color="secondary" size="xs">
+                          {pharmacy.rating.toFixed(1)}
                         </BodyText>
                       </View>
-                    )}
-                    {pharmacy.hasPrescriptionUpload && (
-                      <View style={styles.featureBadge}>
-                        <BodyText color="primary" size="xs">
-                          📋 Rx
-                        </BodyText>
-                      </View>
-                    )}
-                    {pharmacy.hasCodPayment && (
-                      <View style={styles.featureBadge}>
-                        <BodyText color="primary" size="xs">
-                          💰 COD
-                        </BodyText>
-                      </View>
-                    )}
+                      <BodyText color="secondary" size="xs">
+                        {pharmacy.distance?.toFixed(1)} km
+                      </BodyText>
+                    </View>
+
+                    <View style={styles(theme).deliveryBadge}>
+                      <BodyText color="primary" size="xs" weight="medium">
+                        🚚 ₹{pharmacy.deliveryFee} •{' '}
+                        {pharmacy.averageDeliveryTime}min
+                      </BodyText>
+                    </View>
                   </View>
                 </TouchableOpacity>
-              ))}
-            </ScrollView>
-          ) : (
-            <View style={styles.emptyContainer}>
-              <BodyText color="secondary" align="center">
-                No pharmacies found nearby
-              </BodyText>
-              <Button
-                title="Set Location"
-                variant="outline"
-                size="sm"
-                onPress={() => navigate('LocationSearch')}
-                style={styles.emptyButton}
-              />
-            </View>
+              )}
+            />
           )}
         </View>
 
-        {/* Auth Prompt for non-logged in users */}
-        {!isUserLoggedIn && (
-          <View style={styles.authPrompt}>
-            <Heading2 color="primary" align="center">
-              Sign in for better experience
-            </Heading2>
-            <BodyText
-              color="secondary"
-              align="center"
-              style={styles.authPromptText}
-            >
-              Track orders, save addresses, and get personalized recommendations
-            </BodyText>
-            <Button
-              title="Sign In"
-              onPress={() => navigate('LoginScreen')}
-              style={styles.authPromptButton}
-            />
-          </View>
-        )}
-
         {/* Bottom Spacing */}
-        <View style={styles.bottomSpacing} />
+        <View style={styles(theme).bottomSpacing} />
       </ScrollView>
 
       {/* Floating Cart Widget */}
-      {totalItems > 0 && (
-        <TouchableOpacity
-          style={styles.floatingCart}
-          onPress={() => navigate('CartScreen')}
-        >
-          <View style={styles.cartContent}>
-            <BodyText color="white" weight="bold">
-              {totalItems} items • ₹{totalAmount.toFixed(0)}
-            </BodyText>
-            <BodyText color="white" size="sm">
-              View Cart →
-            </BodyText>
-          </View>
-        </TouchableOpacity>
-      )}
+      <FloatingCartButton />
     </SafeAreaView>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.light.background,
-  },
-  locationHeader: {
-    backgroundColor: colors.white,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.light.border,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    ...shadows.sm,
-  },
-  locationButton: {
-    flex: 1,
-  },
-  locationContent: {
-    gap: spacing.xs,
-  },
-  locationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  headerButtons: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  searchContainer: {
-    backgroundColor: colors.white,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.light.border,
-  },
-  searchBar: {
-    backgroundColor: colors.light.surface,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderRadius: borderRadius.lg,
-    borderWidth: 2,
-    borderColor: colors.light.border,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  bannerCarousel: {
-    marginBottom: spacing.lg,
-  },
-  quickNavigation: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.lg,
-    gap: spacing.md,
-  },
-  navButton: {
-    marginBottom: spacing.sm,
-  },
-  section: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.lg,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.lg,
-  },
-  headerActions: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  sectionTitle: {
-    marginBottom: spacing.lg,
-    color: colors.light.textHighContrast,
-  },
-  trendingContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  trendingItem: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    backgroundColor: colors.white,
-    borderRadius: borderRadius.xl,
-    borderWidth: 1,
-    borderColor: colors.light.border,
-    ...shadows.sm,
-  },
-  loadingContainer: {
-    padding: spacing.xl,
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: spacing.md,
-    color: colors.light.textSecondary,
-  },
-  pharmacyCard: {
-    width: 280,
-    backgroundColor: colors.white,
-    padding: spacing.lg,
-    marginRight: spacing.md,
-    borderRadius: borderRadius.xl,
-    borderWidth: 1,
-    borderColor: colors.light.border,
-    ...shadows.md,
-  },
-  pharmacyHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: spacing.sm,
-  },
-  pharmacyName: {
-    flex: 1,
-    marginRight: spacing.sm,
-    fontSize: 16,
-  },
-  pharmacyAddress: {
-    marginBottom: spacing.sm,
-    fontSize: 12,
-  },
-  pharmacyDetails: {
-    marginBottom: spacing.sm,
-    gap: spacing.xs,
-  },
-  deliveryInfo: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: spacing.sm,
-  },
-  freeDelivery: {
-    marginBottom: spacing.sm,
-    fontStyle: 'italic',
-  },
-  pharmacyFeatures: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.xs,
-  },
-  featureBadge: {
-    backgroundColor: colors.light.surface,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.light.border,
-  },
-  pharmacyStatus: {
-    marginTop: spacing.sm,
-    alignItems: 'flex-start',
-  },
-  statusBadge: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.full,
-  },
-  emptyContainer: {
-    padding: spacing.xl,
-    alignItems: 'center',
-  },
-  emptyButton: {
-    marginTop: spacing.md,
-  },
-  authPrompt: {
-    backgroundColor: colors.white,
-    marginHorizontal: spacing.lg,
-    marginVertical: spacing.lg,
-    padding: spacing.xl,
-    borderRadius: borderRadius.xl,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.light.border,
-    ...shadows.lg,
-  },
-  authPromptText: {
-    marginTop: spacing.sm,
-    marginBottom: spacing.lg,
-    color: colors.light.textSecondary,
-  },
-  authPromptButton: {
-    marginTop: spacing.sm,
-  },
-  bottomSpacing: {
-    height: 120, // Space for floating cart
-  },
-  floatingCart: {
-    position: 'absolute',
-    bottom: spacing.lg,
-    left: spacing.lg,
-    right: spacing.lg,
-    backgroundColor: colors.primary[500],
-    borderRadius: borderRadius.xl,
-    padding: spacing.lg,
-    ...shadows.xl,
-  },
-  cartContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-});
+const styles = createThemedStyles(theme =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.colors.background.primary,
+    },
+    modernHeader: {
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.lg,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      ...ShadowSystem.depth2(theme.colors.background.elevated),
+    },
+    locationButton: {
+      flex: 1,
+    },
+    locationContent: {
+      gap: spacing.xs,
+    },
+    locationRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+    },
+    headerActions: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+    },
+    headerIconButton: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      justifyContent: 'center',
+      alignItems: 'center',
+      position: 'relative',
+      ...InteractiveShadows.button('secondary', 'default'),
+    },
+    headerIcon: {
+      fontSize: 20,
+    },
+    cartWithItems: {
+      backgroundColor: theme.colors.interactive.primary,
+    },
+    cartBadge: {
+      position: 'absolute',
+      top: -4,
+      right: -4,
+      backgroundColor: theme.colors.status.error,
+      borderRadius: 10,
+      minWidth: 20,
+      height: 20,
+      justifyContent: 'center',
+      alignItems: 'center',
+      ...ShadowSystem.depth2(),
+    },
+    searchContainer: {
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.sm,
+    },
+    modernSearchBar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md,
+      borderRadius: borderRadius.xl,
+      borderWidth: 1,
+      borderColor: theme.colors.border.primary,
+      ...InteractiveShadows.card('default', 1),
+    },
+    searchIcon: {
+      width: 20,
+      height: 20,
+      borderRadius: 18,
+      backgroundColor: theme.colors.interactive.primary,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: spacing.md,
+      ...ShadowSystem.depth1(),
+    },
+    searchIconText: {
+      fontSize: 16,
+    },
+    searchPlaceholder: {
+      flex: 1,
+    },
+    searchFilter: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: theme.colors.background.tertiary,
+      justifyContent: 'center',
+      alignItems: 'center',
+      ...ShadowSystem.depth1(),
+    },
+    filterIcon: {
+      fontSize: 14,
+    },
+    scrollView: {
+      flex: 1,
+    },
+    bannerCarousel: {
+      marginBottom: spacing.lg,
+    },
+    quickActionsGrid: {
+      flexDirection: 'row',
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.lg,
+      gap: spacing.md,
+    },
+    quickActionCard: {
+      flex: 1,
+      padding: spacing.lg,
+      borderRadius: borderRadius.xl,
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: theme.colors.border.primary,
+      ...InteractiveShadows.card('default', 2),
+    },
+    quickActionIcon: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      backgroundColor: theme.colors.interactive.primary,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: spacing.sm,
+      ...ShadowSystem.depth2(),
+    },
+    quickActionEmoji: {
+      fontSize: 24,
+    },
+    section: {
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.lg,
+    },
+    sectionHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: spacing.lg,
+    },
+    // headerActions: {
+    //   flexDirection: 'row',
+    //   gap: spacing.sm,
+    // },
+    sectionTitle: {
+      marginBottom: spacing.lg,
+      color: theme.colors.text.contrast,
+    },
+    trendingContainer: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.sm,
+    },
+    trendingItem: {
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderRadius: borderRadius.xl,
+      borderWidth: 1,
+      borderColor: theme.colors.border.primary,
+      ...ShadowSystem.depth1(theme.colors.background.secondary),
+    },
+    loadingContainer: {
+      padding: spacing.xl,
+      alignItems: 'center',
+    },
+    loadingText: {
+      marginTop: spacing.md,
+      color: theme.colors.text.secondary,
+    },
+    pharmacyGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.md,
+    },
+    modernPharmacyCard: {
+      width: '100%',
+      borderRadius: borderRadius.xl,
+      borderWidth: 1,
+      marginBottom: 12,
+      borderColor: theme.colors.border.primary,
+      overflow: 'hidden',
+      ...MedicalShadows.safe(),
+    },
+    pharmacyImageContainer: {
+      height: 100,
+      position: 'relative',
+    },
+    pharmacyImage: {
+      width: '100%',
+      height: '100%',
+    },
+    pharmacyImagePlaceholder: {
+      width: '100%',
+      height: '100%',
+      backgroundColor: theme.colors.background.secondary,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    pharmacyImageIcon: {
+      fontSize: 32,
+      color: theme.colors.text.secondary,
+    },
+    modernStatusBadge: {
+      position: 'absolute',
+      top: spacing.sm,
+      right: spacing.sm,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+      borderRadius: borderRadius.full,
+    },
+    pharmacyCardContent: {
+      padding: spacing.md,
+    },
+    pharmacyCardAddress: {
+      marginTop: spacing.xs,
+      marginBottom: spacing.sm,
+    },
+    pharmacyCardMeta: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: spacing.sm,
+    },
+    ratingContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+    },
+    deliveryBadge: {
+      backgroundColor: theme.colors.background.tertiary,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+      borderRadius: borderRadius.md,
+      ...ShadowSystem.depth1(),
+    },
+    emptyContainer: {
+      padding: spacing.xl,
+      alignItems: 'center',
+    },
+    emptyIcon: {
+      fontSize: 48,
+      marginBottom: spacing.md,
+    },
+    emptyTitle: {
+      marginBottom: spacing.md,
+    },
+    emptyButton: {
+      marginTop: spacing.md,
+    },
+    authPrompt: {
+      marginHorizontal: spacing.lg,
+      marginVertical: spacing.lg,
+      padding: spacing.xl,
+      borderRadius: borderRadius.xl,
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: theme.colors.border.primary,
+      ...ShadowSystem.overlay(theme.colors.background.elevated),
+    },
+    authPromptText: {
+      marginTop: spacing.sm,
+      marginBottom: spacing.lg,
+      color: theme.colors.text.secondary,
+    },
+    authPromptButton: {
+      marginTop: spacing.sm,
+    },
+    bottomSpacing: {
+      height: 120, // Space for floating cart
+    },
+    floatingCart: {
+      position: 'absolute',
+      bottom: spacing.lg,
+      left: spacing.lg,
+      right: spacing.lg,
+      borderRadius: borderRadius.xl,
+      padding: spacing.lg,
+      ...InteractiveShadows.button('primary', 'default'),
+    },
+    cartContent: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+  }),
+);
 
 export default HomeScreen;

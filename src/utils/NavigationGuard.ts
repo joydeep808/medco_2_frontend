@@ -3,9 +3,12 @@
  * Implements role-based access control for navigation
  */
 
-import { Alert } from 'react-native';
 import { useAuthStore } from '@store/AuthStore';
-import { goBack, resetAndNavigate } from '@utils/NavigationUtils';
+import { goBack, resetAndNavigateUnsafe } from '@utils/NavigationUtils';
+import {
+  showErrorToast,
+  showWarningToast,
+} from '@components/Toast/ToastManager';
 import { JwtTokenUser } from '@interfaces/response/common';
 
 // Define user roles
@@ -80,6 +83,12 @@ export const ROUTE_ACCESS_CONFIG: Record<string, RouteAccess> = {
     fallbackRoute: 'LoginScreen',
     description: 'Pharmacy details and medicines',
   },
+  PharmacyScreen: {
+    allowedRoles: ['CUSTOMER'],
+    requiresAuth: true,
+    fallbackRoute: 'LoginScreen',
+    description: 'Pharmacy details and medicines',
+  },
   Cart: {
     allowedRoles: ['CUSTOMER'],
     requiresAuth: true,
@@ -91,6 +100,12 @@ export const ROUTE_ACCESS_CONFIG: Record<string, RouteAccess> = {
     requiresAuth: true,
     fallbackRoute: 'LoginScreen',
     description: 'Cart management',
+  },
+  CheckoutScreen: {
+    allowedRoles: ['CUSTOMER'],
+    requiresAuth: true,
+    fallbackRoute: 'LoginScreen',
+    description: 'Checkout',
   },
   OrderScreen: {
     allowedRoles: ['CUSTOMER'],
@@ -311,46 +326,38 @@ export class NavigationGuard {
     const routeConfig = ROUTE_ACCESS_CONFIG[routeName];
 
     if (!routeConfig) {
-      Alert.alert('Error', 'Invalid route requested');
+      showErrorToast('Invalid route requested');
       goBack();
       return;
     }
 
     // If user is not authenticated and route requires auth
     if (routeConfig.requiresAuth && !user) {
-      Alert.alert(
-        'Authentication Required',
-        'Please login to access this feature',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Login',
-            onPress: () => resetAndNavigate('LoginScreen'),
-          },
-        ],
-      );
+      showWarningToast('Please login to access this feature', {
+        action: {
+          label: 'Login',
+          onPress: () => resetAndNavigateUnsafe('LoginScreen'),
+        },
+      });
+      resetAndNavigateUnsafe('LoginScreen');
       return;
     }
 
     // If user is authenticated but doesn't have the right role
     if (user) {
       const userRole = user.role as UserRole;
-      Alert.alert(
-        'Access Denied',
+      showErrorToast(
         `This feature is not available for ${userRole
           .toLowerCase()
           .replace('_', ' ')} accounts.`,
-        [{ text: 'OK', onPress: () => goBack() }],
       );
+      goBack();
       return;
     }
 
     // Fallback
-    Alert.alert(
-      'Access Denied',
-      'You do not have permission to access this feature',
-      [{ text: 'OK', onPress: () => goBack() }],
-    );
+    showErrorToast('You do not have permission to access this feature');
+    goBack();
   }
 
   /**
@@ -378,13 +385,13 @@ export class NavigationGuard {
     const user = this.getCurrentUser();
 
     if (!user) {
-      resetAndNavigate('LoginScreen');
+      resetAndNavigateUnsafe('LoginScreen');
       return;
     }
 
     const userRole = user.role as UserRole;
     const homeRoute = this.getDefaultHomeRoute(userRole);
-    resetAndNavigate(homeRoute);
+    resetAndNavigateUnsafe(homeRoute);
   }
 
   /**

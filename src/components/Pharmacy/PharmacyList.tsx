@@ -250,7 +250,6 @@ export const PharmacyList: React.FC<PharmacyListProps> = ({
         renderItem={renderPharmacyItem}
         keyExtractor={keyExtractor}
         getItemType={getItemType}
-        estimatedItemSize={estimatedItemSize}
         onEndReached={handleLoadMore}
         onEndReachedThreshold={0.5}
         ListFooterComponent={renderLoadingFooter}

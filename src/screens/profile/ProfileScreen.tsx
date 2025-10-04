@@ -4,7 +4,13 @@
  */
 
 import React from 'react';
-import { View, ScrollView, StyleSheet, StatusBar } from 'react-native';
+import {
+  View,
+  ScrollView,
+  StyleSheet,
+  StatusBar,
+  TouchableOpacity,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   BodyText,
@@ -18,13 +24,13 @@ import {
   spacing,
   borderRadius,
   shadows,
-  
   typography,
 } from '@components';
 import { useAuthStore, removeToken } from '@store/AuthStore';
 import { useLocationStore } from '@store/LocationStore';
 import LocationDisplay from '../../components/Location/LocationDisplay';
 import AddressBook from '../../components/Location/AddressBook';
+import { navigate } from '@utils/NavigationUtils';
 
 export const ProfileScreen: React.FC = () => {
   const { user } = useAuthStore();
@@ -35,26 +41,28 @@ export const ProfileScreen: React.FC = () => {
   };
 
   const renderProfileHeader = () => (
-    <Card style={styles.profileHeader}>
-      <Row>
-        <View style={styles.avatarContainer}>
-          <Typography
-            variant="bodyLarge"
-            color="contrast"
-            style={styles.avatarText}
-          >
-            {user?.name?.charAt(0).toUpperCase() || 'U'}
-          </Typography>
+    <View style={styles.modernProfileHeader}>
+      <View style={styles.profileBackground}>
+        <View style={styles.profileContent}>
+          <View style={styles.modernAvatarContainer}>
+            <BodyText style={styles.modernAvatarText}>
+              {user?.name?.charAt(0).toUpperCase() || 'U'}
+            </BodyText>
+          </View>
+          <View style={styles.profileInfo}>
+            <Heading2 color="white" style={styles.profileName}>
+              {user?.name || 'User'}
+            </Heading2>
+            <BodyText color="white" style={styles.profileEmail}>
+              {user?.email || 'user@example.com'}
+            </BodyText>
+            <BodyText color="white" style={styles.profilePhone}>
+              +91 9876543210
+            </BodyText>
+          </View>
         </View>
-        <Column style={styles.userInfo}>
-          <Heading2 color="primary">{user?.name || 'User'}</Heading2>
-          <BodyText color="secondary">
-            {user?.email || 'user@example.com'}
-          </BodyText>
-          <BodyText color="secondary">{'+91 9876543210'}</BodyText>
-        </Column>
-      </Row>
-    </Card>
+      </View>
+    </View>
   );
 
   const renderLocationSection = () => (
@@ -71,37 +79,55 @@ export const ProfileScreen: React.FC = () => {
   );
 
   const renderQuickActions = () => (
-    <Card style={styles.section}>
-      <Heading2 color="primary" style={styles.sectionTitle}>
-        Quick Actions
-      </Heading2>
-      <Column style={styles.quickActions}>
-        <Button
-          variant="ghost"
-          title="📋 My Orders"
-          style={styles.actionItem}
-          onPress={() => console.log('My Orders')}
-        />
-        <Button
-          variant="ghost"
-          title="💊 Prescriptions"
-          style={styles.actionItem}
-          onPress={() => console.log('Prescriptions')}
-        />
-        <Button
-          variant="ghost"
-          title="❤️ Favorites"
-          style={styles.actionItem}
-          onPress={() => console.log('Favorites')}
-        />
-        <Button
-          variant="ghost"
-          title="🏥 My Pharmacies"
-          style={styles.actionItem}
-          onPress={() => console.log('My Pharmacies')}
-        />
-      </Column>
-    </Card>
+    <View style={styles.quickActionsGrid}>
+      <TouchableOpacity
+        style={styles.quickActionCard}
+        onPress={() => navigate("OrderScreen")}
+      >
+        <View style={styles.quickActionIconContainer}>
+          <BodyText style={styles.quickActionIcon}>📋</BodyText>
+        </View>
+        <BodyText color="primary" weight="medium" size="sm">
+          My Orders
+        </BodyText>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.quickActionCard}
+        onPress={() => console.log('Prescriptions')}
+      >
+        <View style={styles.quickActionIconContainer}>
+          <BodyText style={styles.quickActionIcon}>💊</BodyText>
+        </View>
+        <BodyText color="primary" weight="medium" size="sm">
+          Prescriptions
+        </BodyText>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.quickActionCard}
+        onPress={() => console.log('Favorites')}
+      >
+        <View style={styles.quickActionIconContainer}>
+          <BodyText style={styles.quickActionIcon}>❤️</BodyText>
+        </View>
+        <BodyText color="primary" weight="medium" size="sm">
+          Favorites
+        </BodyText>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.quickActionCard}
+        onPress={() => console.log('My Pharmacies')}
+      >
+        <View style={styles.quickActionIconContainer}>
+          <BodyText style={styles.quickActionIcon}>🏥</BodyText>
+        </View>
+        <BodyText color="primary" weight="medium" size="sm">
+          Pharmacies
+        </BodyText>
+      </TouchableOpacity>
+    </View>
   );
 
   const renderSettings = () => (
@@ -195,38 +221,81 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
   },
-  profileHeader: {
+  modernProfileHeader: {
     marginBottom: spacing.lg,
-    backgroundColor: colors.white,
-    borderRadius: borderRadius.xl,
-    padding: spacing.xl,
-    borderWidth: 1,
-    borderColor: colors.light.border,
-    ...shadows.md,
   },
-  avatarContainer: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+  profileBackground: {
     backgroundColor: colors.primary[500],
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.xl,
+    paddingHorizontal: spacing.lg,
+    borderBottomLeftRadius: borderRadius.xl,
+    borderBottomRightRadius: borderRadius.xl,
+  },
+  profileContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  modernAvatarContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: colors.white,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: spacing.lg,
-    ...shadows.sm,
+    ...shadows.lg,
   },
-  avatarText: {
-    color: colors.white,
-    fontSize: typography.fontSize['2xl'],
+  modernAvatarText: {
+    color: colors.primary[500],
+    fontSize: typography.fontSize['3xl'],
     fontWeight: typography.fontWeight.bold,
   },
-  userInfo: {
+  profileInfo: {
     flex: 1,
+  },
+  profileName: {
+    marginBottom: spacing.xs,
+  },
+  profileEmail: {
+    marginBottom: spacing.xs,
+    opacity: 0.9,
+  },
+  profilePhone: {
+    opacity: 0.9,
+  },
+  quickActionsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: spacing.lg,
+    gap: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  quickActionCard: {
+    width: '47%',
+    backgroundColor: colors.white,
+    padding: spacing.lg,
+    borderRadius: borderRadius.xl,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.light.border,
+    ...shadows.sm,
+  },
+  quickActionIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: colors.primary[100],
     justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  quickActionIcon: {
+    fontSize: 24,
   },
   section: {
+    marginHorizontal: spacing.lg,
     marginBottom: spacing.lg,
     backgroundColor: colors.white,
     borderRadius: borderRadius.xl,

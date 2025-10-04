@@ -122,7 +122,6 @@ export const NearbyPharmacies: React.FC<NearbyPharmaciesProps> = ({
         keyExtractor={item => item.id}
         horizontal
         showsHorizontalScrollIndicator={false}
-        estimatedItemSize={280}
         contentContainerStyle={styles.listContainer}
         ListFooterComponent={
           pharmacies.length > 10 ? renderViewAllButton : undefined

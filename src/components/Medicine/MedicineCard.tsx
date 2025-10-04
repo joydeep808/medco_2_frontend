@@ -154,7 +154,7 @@ export const MedicineCard: React.FC<MedicineCardProps> = ({
 
         <View style={styles.details}>
           <Text style={styles.form}>{medicine.form}</Text>
-          <Text style={styles.category}>{medicine.category}</Text>
+          <Text style={styles.category}>{medicine.category.name}</Text>
         </View>
 
         <View style={styles.pricing}>

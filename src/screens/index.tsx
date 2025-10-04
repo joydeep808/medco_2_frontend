@@ -11,10 +11,12 @@ import RegisterScreen from './auth/RegisterScreen';
 import ComponentShowcase from './example/ComponentShowcase';
 import HomeScreen from './home/HomeScreen';
 import ProfileScreen from './profile/ProfileScreen';
-import CartScreen from './cart/CartScreen';
 import SearchScreen from './search/SearchScreen';
 import OrderScreen from './order/OrderScreen';
 import StoreScreen from './store/StoreScreen';
+import PharmacyScreen from './pharmacy/PharmacyScreen';
+import CheckoutScreen from './checkout/CheckoutScreen';
+import CartScreen from './cart/CartScreen.simple';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -31,6 +33,8 @@ export const AppRoutings = ({ isDark }: { isDark: boolean }) => {
         <Stack.Screen name="HomeScreen" component={HomeScreen} />
         <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
         <Stack.Screen name="CartScreen" component={CartScreen} />
+        <Stack.Screen name="PharmacyScreen" component={PharmacyScreen} />
+        <Stack.Screen name="CheckoutScreen" component={CheckoutScreen} />
 
         {/* Add the component showcase for demo purposes */}
         <Stack.Screen

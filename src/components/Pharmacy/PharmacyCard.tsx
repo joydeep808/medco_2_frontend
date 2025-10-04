@@ -1,432 +1,291 @@
 /**
- * Pharmacy Card Component
- * Displays pharmacy information with rating, distance, delivery info, and operating hours
+ * Modern Pharmacy Card Component
+ * Displays pharmacy information in a clean, modern card layout
  */
 
 import React from 'react';
-import { View, Text, TouchableOpacity, Image, StyleSheet } from 'react-native';
-import { Pharmacy } from '@store/PharmacyStore';
+import {
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  ViewStyle,
+} from 'react-native';
+import {
+  BodyText,
+  colors,
+  spacing,
+  borderRadius,
+  shadows,
+  typography,
+} from '@components';
 
 export interface PharmacyCardProps {
-  pharmacy: Pharmacy;
-  onPress?: (pharmacy: Pharmacy) => void;
-  showDistance?: boolean;
+  pharmacy: {
+    id: string | number;
+    name: string;
+    address?:
+      | string
+      | {
+          street: string;
+          area: string;
+          city: string;
+          state: string;
+          pincode: string;
+          latitude: number;
+          longitude: number;
+        };
+    rating: number;
+    totalRatings: number;
+    distance?: number;
+    isOpen: boolean;
+    deliveryFee: number;
+    averageDeliveryTime?: number;
+    estimatedDeliveryTime?: number;
+    freeDeliveryAbove?: number;
+    pharmacyImageUrl?: string;
+    isOpen24x7?: boolean;
+    hasPrescriptionUpload?: boolean;
+    hasCodPayment?: boolean;
+  };
+  onPress?: (pharmacy: any) => void;
   compact?: boolean;
-  style?: any;
+  showDistance?: boolean;
+  style?: ViewStyle;
 }
 
 export const PharmacyCard: React.FC<PharmacyCardProps> = ({
   pharmacy,
   onPress,
-  showDistance = true,
   compact = false,
+  showDistance = true,
   style,
 }) => {
   const handlePress = () => {
-    if (onPress) {
-      onPress(pharmacy);
-    }
+    onPress?.(pharmacy);
   };
 
-  const getStatusColor = () => {
-    if (!pharmacy.isOpen) return '#F44336';
-    if (!pharmacy.deliveryInfo.available) return '#FF9800';
-    return '#4CAF50';
-  };
-
-  const getStatusText = () => {
-    if (!pharmacy.isOpen) return 'Closed';
-    if (!pharmacy.deliveryInfo.available) return 'Pickup Only';
-    return 'Open';
-  };
-
-  const formatDeliveryTime = () => {
-    if (!pharmacy.deliveryInfo.available) return 'Pickup only';
-    return `Delivery in ${pharmacy.deliveryInfo.estimatedTime}`;
-  };
-
-  const formatDeliveryFee = () => {
-    if (!pharmacy.deliveryInfo.available) return '';
-    if (pharmacy.deliveryInfo.deliveryFee === 0) return 'Free delivery';
-    return `₹${pharmacy.deliveryInfo.deliveryFee} delivery fee`;
-  };
-
-  const renderRating = () => (
-    <View style={styles.ratingContainer}>
-      <Text style={styles.ratingText}>⭐ {pharmacy.rating.toFixed(1)}</Text>
-      <Text style={styles.reviewText}>({pharmacy.reviewCount})</Text>
-    </View>
-  );
-
-  const renderOffers = () => {
-    const activeOffers = pharmacy.offers.filter(offer => offer.isActive);
-    if (activeOffers.length === 0) return null;
-
-    return (
-      <View style={styles.offersContainer}>
-        {activeOffers.slice(0, 2).map((offer, index) => (
-          <View key={offer.id} style={styles.offerBadge}>
-            <Text style={styles.offerText}>
-              {offer.type === 'DISCOUNT' ? `${offer.value}% OFF` : offer.title}
-            </Text>
-          </View>
-        ))}
-      </View>
-    );
-  };
-
-  const renderServices = () => {
-    const availableServices = pharmacy.services.filter(
-      service => service.available,
-    );
-    if (availableServices.length === 0) return null;
-
-    return (
-      <View style={styles.servicesContainer}>
-        {availableServices.slice(0, 3).map((service, index) => (
-          <Text key={service.id} style={styles.serviceText}>
-            {service.name}
-            {index < Math.min(availableServices.length - 1, 2) && ' • '}
-          </Text>
-        ))}
-      </View>
-    );
-  };
-
-  if (compact) {
-    return (
-      <TouchableOpacity
-        style={[styles.compactCard, style]}
-        onPress={handlePress}
-        activeOpacity={0.7}
-      >
-        <View style={styles.compactContent}>
-          <View style={styles.compactHeader}>
-            <Text style={styles.compactName} numberOfLines={1}>
-              {pharmacy.name}
-            </Text>
-            <View
-              style={[
-                styles.compactStatus,
-                { backgroundColor: getStatusColor() },
-              ]}
-            >
-              <Text style={styles.compactStatusText}>{getStatusText()}</Text>
-            </View>
-          </View>
-
-          <View style={styles.compactInfo}>
-            {renderRating()}
-            {showDistance && pharmacy.distance && (
-              <Text style={styles.compactDistance}>
-                📍 {pharmacy.distance.toFixed(1)} km
-              </Text>
-            )}
-          </View>
-
-          <Text style={styles.compactDelivery} numberOfLines={1}>
-            {formatDeliveryTime()}
-          </Text>
-        </View>
-      </TouchableOpacity>
-    );
-  }
+  const cardStyle = compact ? styles.compactCard : styles.fullCard;
 
   return (
     <TouchableOpacity
-      style={[styles.card, style]}
+      style={[cardStyle, style]}
       onPress={handlePress}
       activeOpacity={0.7}
     >
       {/* Pharmacy Image */}
       <View style={styles.imageContainer}>
-        {pharmacy.logo ? (
+        {pharmacy.pharmacyImageUrl ? (
           <Image
-            source={{ uri: pharmacy.logo }}
+            source={{ uri: pharmacy.pharmacyImageUrl }}
             style={styles.pharmacyImage}
             resizeMode="cover"
           />
         ) : (
-          <View style={styles.placeholderImage}>
-            <Text style={styles.placeholderText}>🏥</Text>
+          <View style={styles.imagePlaceholder}>
+            <BodyText style={styles.placeholderIcon}>🏥</BodyText>
           </View>
         )}
 
         {/* Status Badge */}
         <View
-          style={[styles.statusBadge, { backgroundColor: getStatusColor() }]}
+          style={[
+            styles.statusBadge,
+            {
+              backgroundColor: pharmacy.isOpen
+                ? colors.success.DEFAULT
+                : colors.error.DEFAULT,
+            },
+          ]}
         >
-          <Text style={styles.statusText}>{getStatusText()}</Text>
+          <BodyText color="white" size="xs" weight="bold">
+            {pharmacy.isOpen ? 'Open' : 'Closed'}
+          </BodyText>
         </View>
-
-        {/* Verified Badge */}
-        {pharmacy.isVerified && (
-          <View style={styles.verifiedBadge}>
-            <Text style={styles.verifiedText}>✓</Text>
-          </View>
-        )}
       </View>
 
-      {/* Pharmacy Info */}
-      <View style={styles.content}>
-        <View style={styles.header}>
-          <Text style={styles.pharmacyName} numberOfLines={1}>
-            {pharmacy.name}
-          </Text>
-          {renderRating()}
-        </View>
+      {/* Card Content */}
+      <View style={styles.cardContent}>
+        {/* Pharmacy Name */}
+        <BodyText
+          color="primary"
+          weight="bold"
+          size={compact ? 'sm' : 'md'}
+          numberOfLines={1}
+          style={styles.pharmacyName}
+        >
+          {pharmacy.name}
+        </BodyText>
 
-        <Text style={styles.address} numberOfLines={2}>
-          {pharmacy.address}
-        </Text>
+        {/* Address */}
+        <BodyText
+          color="secondary"
+          size="xs"
+          numberOfLines={compact ? 1 : 2}
+          style={styles.address}
+        >
+          📍{' '}
+          {typeof pharmacy.address === 'string'
+            ? pharmacy.address
+            : pharmacy.address
+            ? `${pharmacy.address.area}, ${pharmacy.address.city}`
+            : 'Address not available'}
+        </BodyText>
 
-        {/* Distance and Delivery Info */}
-        <View style={styles.deliveryInfo}>
-          <View style={styles.deliveryRow}>
-            {showDistance && pharmacy.distance && (
-              <Text style={styles.distance}>
-                📍 {pharmacy.distance.toFixed(1)} km away
-              </Text>
-            )}
-            <Text style={styles.deliveryTime}>{formatDeliveryTime()}</Text>
+        {/* Rating and Distance */}
+        <View style={styles.metaRow}>
+          <View style={styles.ratingContainer}>
+            <BodyText color="warning" size="xs">
+              ⭐
+            </BodyText>
+            <BodyText color="secondary" size="xs">
+              {pharmacy.rating.toFixed(1)} ({pharmacy.totalRatings})
+            </BodyText>
           </View>
-
-          {pharmacy.deliveryInfo.available && (
-            <Text style={styles.deliveryFee}>{formatDeliveryFee()}</Text>
+          {showDistance && pharmacy.distance && (
+            <BodyText color="secondary" size="xs">
+              {pharmacy.distance.toFixed(1)} km
+            </BodyText>
           )}
         </View>
 
-        {/* Services */}
-        {renderServices()}
-
-        {/* Offers */}
-        {renderOffers()}
-
-        {/* Operating Hours */}
-        <View style={styles.hoursContainer}>
-          <Text style={styles.hoursText}>
-            {pharmacy.isOpen ? '🕒 Open now' : '🕒 Closed'}
-          </Text>
-          {pharmacy.operatingHours.today && (
-            <Text style={styles.hoursDetail}>
-              {pharmacy.operatingHours.today.open} -{' '}
-              {pharmacy.operatingHours.today.close}
-            </Text>
-          )}
+        {/* Delivery Info */}
+        <View style={styles.deliveryContainer}>
+          <BodyText color="primary" size="xs" weight="medium">
+            🚚 ₹{pharmacy.deliveryFee} •{' '}
+            {pharmacy.averageDeliveryTime ||
+              pharmacy.estimatedDeliveryTime ||
+              30}
+            min
+          </BodyText>
         </View>
+
+        {/* Free Delivery Badge */}
+        {pharmacy.freeDeliveryAbove && (
+          <BodyText color="success" size="xs" style={styles.freeDelivery}>
+            Free delivery above ₹{pharmacy.freeDeliveryAbove}
+          </BodyText>
+        )}
+
+        {/* Features */}
+        {!compact && (
+          <View style={styles.featuresContainer}>
+            {pharmacy.isOpen24x7 && (
+              <View style={styles.featureBadge}>
+                <BodyText color="primary" size="xs">
+                  24/7
+                </BodyText>
+              </View>
+            )}
+            {pharmacy.hasPrescriptionUpload && (
+              <View style={styles.featureBadge}>
+                <BodyText color="primary" size="xs">
+                  📋 Rx
+                </BodyText>
+              </View>
+            )}
+            {pharmacy.hasCodPayment && (
+              <View style={styles.featureBadge}>
+                <BodyText color="primary" size="xs">
+                  💰 COD
+                </BodyText>
+              </View>
+            )}
+          </View>
+        )}
       </View>
     </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    marginHorizontal: 16,
-    marginVertical: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+  fullCard: {
+    backgroundColor: colors.white,
+    borderRadius: borderRadius.xl,
+    borderWidth: 1,
+    borderColor: colors.light.border,
     overflow: 'hidden',
+    ...shadows.md,
   },
   compactCard: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    padding: 12,
-    marginHorizontal: 16,
-    marginVertical: 4,
+    backgroundColor: colors.white,
+    borderRadius: borderRadius.lg,
     borderWidth: 1,
-    borderColor: '#eee',
+    borderColor: colors.light.border,
+    overflow: 'hidden',
+    ...shadows.sm,
   },
   imageContainer: {
-    height: 120,
+    height: 100,
     position: 'relative',
   },
   pharmacyImage: {
     width: '100%',
     height: '100%',
   },
-  placeholderImage: {
+  imagePlaceholder: {
     width: '100%',
     height: '100%',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: colors.light.surface,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  placeholderText: {
+  placeholderIcon: {
     fontSize: 32,
+    color: colors.light.textSecondary,
   },
   statusBadge: {
     position: 'absolute',
-    top: 8,
-    left: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
+    top: spacing.sm,
+    right: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
   },
-  statusText: {
-    color: '#fff',
-    fontSize: 10,
-    fontWeight: '600',
-  },
-  verifiedBadge: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 20,
-    height: 20,
-    backgroundColor: '#4CAF50',
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  verifiedText: {
-    color: '#fff',
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  content: {
-    padding: 16,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 8,
+  cardContent: {
+    padding: spacing.md,
   },
   pharmacyName: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-    flex: 1,
-    marginRight: 8,
+    marginBottom: spacing.xs,
+  },
+  address: {
+    marginBottom: spacing.sm,
+    lineHeight: 16,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
   },
   ratingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing.xs,
   },
-  ratingText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#333',
+  deliveryContainer: {
+    backgroundColor: colors.primary[50],
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.md,
+    marginBottom: spacing.xs,
   },
-  reviewText: {
-    fontSize: 12,
-    color: '#666',
-    marginLeft: 4,
+  freeDelivery: {
+    fontStyle: 'italic',
+    marginBottom: spacing.sm,
   },
-  address: {
-    fontSize: 14,
-    color: '#666',
-    lineHeight: 18,
-    marginBottom: 12,
-  },
-  deliveryInfo: {
-    marginBottom: 12,
-  },
-  deliveryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  distance: {
-    fontSize: 12,
-    color: '#666',
-  },
-  deliveryTime: {
-    fontSize: 12,
-    color: '#007AFF',
-    fontWeight: '500',
-  },
-  deliveryFee: {
-    fontSize: 12,
-    color: '#666',
-  },
-  servicesContainer: {
+  featuresContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginBottom: 12,
+    gap: spacing.xs,
   },
-  serviceText: {
-    fontSize: 12,
-    color: '#666',
-  },
-  offersContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginBottom: 12,
-  },
-  offerBadge: {
-    backgroundColor: '#E3F2FD',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-    marginRight: 8,
-    marginBottom: 4,
-  },
-  offerText: {
-    fontSize: 10,
-    color: '#1976D2',
-    fontWeight: '600',
-  },
-  hoursContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  hoursText: {
-    fontSize: 12,
-    color: '#666',
-  },
-  hoursDetail: {
-    fontSize: 12,
-    color: '#666',
-  },
-  // Compact styles
-  compactContent: {
-    flex: 1,
-  },
-  compactHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  compactName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    flex: 1,
-    marginRight: 8,
-  },
-  compactStatus: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 3,
-  },
-  compactStatusText: {
-    color: '#fff',
-    fontSize: 10,
-    fontWeight: '600',
-  },
-  compactInfo: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  compactDistance: {
-    fontSize: 12,
-    color: '#666',
-  },
-  compactDelivery: {
-    fontSize: 12,
-    color: '#007AFF',
-    fontWeight: '500',
+  featureBadge: {
+    backgroundColor: colors.light.surface,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.light.border,
   },
 });
 

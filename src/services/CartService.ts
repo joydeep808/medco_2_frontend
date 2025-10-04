@@ -1,6 +1,17 @@
-import { apiInstance } from '@config/_axios/AxiosConfig';
-import { ApiResponse } from '@interfaces/response/common';
+/**
+ * Cart Service
+ * Handles all cart-related API operations
+ */
 
+import { ApiResponse } from '@interfaces/response/common';
+import {
+  getRequest,
+  postRequest,
+  putRequest,
+  deleteRequest,
+} from '@utils/AxiosUtil';
+
+// Cart API Types based on the provided response structure
 export interface CartItem {
   id: number;
   medicineVariantId: number;
@@ -26,7 +37,7 @@ export interface CartItem {
   updatedAt: string;
 }
 
-export interface Cart {
+export interface CartData {
   id: number;
   userId: number;
   items: CartItem[];
@@ -34,7 +45,7 @@ export interface Cart {
   totalMrp: number;
   totalDiscount: number;
   totalQuantity: number;
-  couponCode?: string;
+  couponCode: string | null;
   couponDiscount: number;
   finalAmount: number;
   gstAmount: number;
@@ -44,6 +55,7 @@ export interface Cart {
   deliveryCharge: number;
   minOrderAmount: number;
   isFreeDeliveryEligible: boolean;
+  pharmacyId: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -68,56 +80,124 @@ export interface ApplyCouponRequest {
   couponCode: string;
 }
 
-export interface CartValidationResponse {
+export interface CouponValidationResponse {
   isValid: boolean;
+  couponCode: string;
+  discountAmount: number;
+  finalAmount: number;
+  message: string;
   errors: string[];
-  warnings: string[];
-  updatedItems: any[];
-  totalAmount: number;
 }
 
-export class CartService {
-  private static readonly BASE_URL = '/cart';
-
-  static async getCart(cartId: number): Promise<ApiResponse<Cart>> {
-    return apiInstance.get(`${this.BASE_URL}/${cartId}`);
+class CartService {
+  /**
+   * Get all carts for the user (pharmacy-wise)
+   */
+  async getAllCarts(): Promise<ApiResponse<CartData[]>> {
+    return getRequest<CartData[]>('/cart/user/all');
   }
 
-  static async addToCart(
-    request: AddToCartRequest,
-  ): Promise<ApiResponse<Cart>> {
-    return apiInstance.post(`${this.BASE_URL}/add`, request);
+  /**
+   * Get cart by pharmacy ID
+   */
+  async getCartByPharmacy(pharmacyId: number): Promise<ApiResponse<CartData>> {
+    return getRequest<CartData>(`/cart/${pharmacyId}`);
   }
 
-  static async updateCartItem(
+  /**
+   * Add item to cart
+   */
+  async addToCart(request: AddToCartRequest): Promise<ApiResponse<CartData>> {
+    return postRequest<CartData, AddToCartRequest>('/cart/add', request);
+  }
+
+  /**
+   * Update cart item quantity
+   */
+  async updateCartItem(
     request: UpdateCartRequest,
-  ): Promise<ApiResponse<Cart>> {
-    return apiInstance.put(`${this.BASE_URL}/update`, request);
+  ): Promise<ApiResponse<CartData>> {
+    return putRequest<CartData, UpdateCartRequest>('/cart/update', request);
   }
 
-  static async removeFromCart(
+  /**
+   * Remove item from cart
+   */
+  async removeFromCart(
     request: RemoveFromCartRequest,
-  ): Promise<ApiResponse<Cart>> {
-    return apiInstance.delete(`${this.BASE_URL}/remove`, { data: request });
+  ): Promise<ApiResponse<CartData>> {
+    return deleteRequest<CartData>('/cart/remove', request);
   }
 
-  static async clearCart(): Promise<ApiResponse<null>> {
-    return apiInstance.delete(`${this.BASE_URL}`);
+  /**
+   * Clear entire cart for a pharmacy
+   */
+  async clearCart(pharmacyId: number): Promise<ApiResponse<null>> {
+    return deleteRequest<null>(`/cart/${pharmacyId}`);
   }
 
-  static async applyCoupon(
+  /**
+   * Apply coupon to cart
+   */
+  async applyCoupon(
     request: ApplyCouponRequest,
-  ): Promise<ApiResponse<Cart>> {
-    return apiInstance.post(`${this.BASE_URL}/apply`, request);
+  ): Promise<ApiResponse<CartData>> {
+    return postRequest<CartData, ApplyCouponRequest>('/cart/apply', request);
   }
 
-  static async removeCoupon(cartId: number): Promise<ApiResponse<Cart>> {
-    return apiInstance.delete(`${this.BASE_URL}/remove/${cartId}`);
+  /**
+   * Remove coupon from cart
+   */
+  async removeCoupon(cartId: number): Promise<ApiResponse<CartData>> {
+    return deleteRequest<CartData>(`/cart/remove/${cartId}`);
   }
 
-  static async validateCart(
+  /**
+   * Validate cart before checkout
+   */
+  async validateCart(cartId: number): Promise<
+    ApiResponse<{
+      isValid: boolean;
+      errors: string[];
+      warnings: string[];
+      updatedItems: CartItem[];
+      totalAmount: number;
+    }>
+  > {
+    return postRequest<
+      {
+        isValid: boolean;
+        errors: string[];
+        warnings: string[];
+        updatedItems: CartItem[];
+        totalAmount: number;
+      },
+      {}
+    >(`/cart/validate/${cartId}`, {});
+  }
+
+  /**
+   * Validate coupon
+   */
+  async validateCoupon(
+    couponCode: string,
     cartId: number,
-  ): Promise<ApiResponse<CartValidationResponse>> {
-    return apiInstance.post(`${this.BASE_URL}/validate/${cartId}`);
+    orderAmount: number,
+  ): Promise<ApiResponse<CouponValidationResponse>> {
+    return postRequest<
+      CouponValidationResponse,
+      {
+        couponCode: string;
+        cartId: number;
+        orderAmount: number;
+      }
+    >('/coupons/validate', {
+      couponCode,
+      cartId,
+      orderAmount,
+    });
   }
 }
+
+const cartService = new CartService();
+export default cartService;

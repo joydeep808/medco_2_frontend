@@ -56,11 +56,8 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
     <View style={styles.header}>
       <View style={styles.resultInfo}>
         <Text style={styles.resultCount}>
-          {searchResults?.totalCount || 0} medicines found
+          {searchResults?.totalResults?.medicines || 0} medicines found
         </Text>
-        {searchResults?.searchTime && (
-          <Text style={styles.searchTime}>in {searchResults.searchTime}ms</Text>
-        )}
       </View>
 
       <View style={styles.headerActions}>
@@ -124,8 +121,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
       <FlashList
         data={searchResults?.medicines || []}
         renderItem={renderMedicineItem}
-        keyExtractor={item => item.id}
-        estimatedItemSize={viewMode === 'list' ? 120 : 200}
+        keyExtractor={item => item.id.toString()}
         numColumns={viewMode === 'grid' ? 2 : 1}
         ListEmptyComponent={renderEmptyState}
         showsVerticalScrollIndicator={false}

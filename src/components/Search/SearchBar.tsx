@@ -243,7 +243,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                 <FlatList
                   data={trendingSearches.slice(0, 5)}
                   renderItem={renderTrendingItem}
-                  keyExtractor={item => item.id}
+                  keyExtractor={(item, index) => index.toString()}
                   showsVerticalScrollIndicator={false}
                   keyboardShouldPersistTaps="handled"
                 />

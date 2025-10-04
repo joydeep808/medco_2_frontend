@@ -1,227 +1,638 @@
+/**
+ * Enhanced Cart Store with API Integration
+ * Manages pharmacy-wise cart system using Zustand with API sync
+ */
+
 import { create } from 'zustand';
-import {
-  CartService,
-  Cart,
+import { MMKV } from 'react-native-mmkv';
+import cartService, {
+  CartData,
+  CartItem,
   AddToCartRequest,
   UpdateCartRequest,
-  RemoveFromCartRequest,
 } from '@services/CartService';
 
-export interface CartItem {
-  id: number;
-  medicineVariantId: number;
-  medicineName: string;
-  medicineImage: string;
-  variantName: string;
-  pharmacyId: number;
-  pharmacyName: string;
-  quantity: number;
-  mrp: number;
-  sellingPrice: number;
-  totalMrp: number;
-  totalPrice: number;
-  discount: number;
-  totalDiscount: number;
-  gstRate: number;
-  gstAmount: number;
-  itemFinalAmount: number;
-  savings: number;
-  stockQuantity: number;
-  isAvailable: boolean;
-  addedAt: string;
-  updatedAt: string;
-}
+// MMKV instance for cart data persistence
+const cartStorage = new MMKV({
+  id: 'cart-storage-v2',
+  encryptionKey: 'medco-cart-key-v2',
+});
 
-export interface CartPreview {
-  pharmacyId: number;
-  pharmacyName: string;
-  itemCount: number;
-  totalAmount: number;
-  items: CartItem[];
-}
+export interface CartState {
+  // Cart data - pharmacy-wise
+  carts: { [pharmacyId: number]: CartData };
+  activePharmacyId: number | null;
 
-interface CartState {
-  carts: Record<number, Cart>;
-  cartPreview: CartPreview[];
-  loading: boolean;
+  // Loading states
+  isLoading: boolean;
+  isAddingToCart: boolean;
+  isUpdatingCart: boolean;
+  isRemovingFromCart: boolean;
+  isClearingCart: boolean;
+  isApplyingCoupon: boolean;
+
+  // Error handling
   error: string | null;
+  lastError: string | null;
 
-  // Actions
-  addToCart: (request: AddToCartRequest) => Promise<void>;
-  removeFromCart: (request: RemoveFromCartRequest) => Promise<void>;
-  updateQuantity: (request: UpdateCartRequest) => Promise<void>;
-  clearCart: () => Promise<void>;
-  getCart: (cartId: number) => Promise<void>;
-  applyCoupon: (cartId: number, couponCode: string) => Promise<void>;
-  removeCoupon: (cartId: number) => Promise<void>;
-  validateCart: (cartId: number) => Promise<any>;
-  getTotalItems: () => number;
-  getTotalAmount: () => number;
-  generateCartPreview: () => void;
+  // Cart summary
+  totalItems: number;
+  totalAmount: number;
+
+  // Actions - Cart Management
+  loadAllCarts: () => Promise<void>;
+  loadCartByPharmacy: (pharmacyId: number) => Promise<void>;
+  setActiveCart: (pharmacyId: number) => void;
+  clearCart: (pharmacyId: number) => Promise<void>;
+  clearAllCarts: () => void;
+
+  // Actions - Item Management
+  addToCart: (request: AddToCartRequest) => Promise<boolean>;
+  updateCartItem: (cartItemId: number, quantity: number) => Promise<boolean>;
+  removeFromCart: (cartItemId: number) => Promise<boolean>;
+
+  // Actions - Coupon Management
+  applyCoupon: (pharmacyId: number, couponCode: string) => Promise<boolean>;
+  removeCoupon: (pharmacyId: number) => Promise<boolean>;
+
+  // Actions - Utility
+  getCartItemCount: (pharmacyId?: number) => number;
+  getCartTotal: (pharmacyId?: number) => number;
+  hasItemInCart: (pharmacyId: number, medicineVariantId: number) => boolean;
+  getItemQuantity: (pharmacyId: number, medicineVariantId: number) => number;
+  getCartPreview: () => Array<{
+    pharmacyId: number;
+    pharmacyName: string;
+    itemCount: number;
+    total: number;
+  }>;
+
+  // Actions - Persistence
+  persistCarts: () => void;
+  loadPersistedCarts: () => void;
+
+  // Actions - Error handling
+  clearError: () => void;
+  setError: (error: string) => void;
 }
+
+// Helper functions
+const loadPersistedCarts = (): { [pharmacyId: number]: CartData } => {
+  try {
+    const stored = cartStorage.getString('carts');
+    return stored ? JSON.parse(stored) : {};
+  } catch {
+    return {};
+  }
+};
+
+const loadActivePharmacyId = (): number | null => {
+  try {
+    const stored = cartStorage.getString('activePharmacyId');
+    return stored ? parseInt(stored, 10) : null;
+  } catch {
+    return null;
+  }
+};
+
+const calculateTotals = (carts: { [pharmacyId: number]: CartData }) => {
+  const totalItems = Object.values(carts).reduce(
+    (total, cart) => total + cart.totalQuantity,
+    0,
+  );
+
+  const totalAmount = Object.values(carts).reduce(
+    (total, cart) => total + cart.finalAmount,
+    0,
+  );
+
+  return { totalItems, totalAmount };
+};
 
 export const useCartStore = create<CartState>((set, get) => ({
-  carts: {},
-  cartPreview: [],
-  loading: false,
+  // Initial state
+  carts: loadPersistedCarts(),
+  activePharmacyId: loadActivePharmacyId(),
+
+  isLoading: false,
+  isAddingToCart: false,
+  isUpdatingCart: false,
+  isRemovingFromCart: false,
+  isClearingCart: false,
+  isApplyingCoupon: false,
+
   error: null,
+  lastError: null,
 
+  totalItems: 0,
+  totalAmount: 0,
+
+  // Cart Management Actions
+  loadAllCarts: async () => {
+    set({ isLoading: true, error: null });
+
+    try {
+      const response = await cartService.getAllCarts();
+
+      if (response.success && response.data) {
+        const cartsMap: { [pharmacyId: number]: CartData } = {};
+
+        response.data.forEach(cart => {
+          cartsMap[cart.pharmacyId] = cart;
+        });
+
+        const { totalItems, totalAmount } = calculateTotals(cartsMap);
+
+        set({
+          carts: cartsMap,
+          totalItems,
+          totalAmount,
+          isLoading: false,
+        });
+
+        get().persistCarts();
+      } else {
+        set({
+          error: response.message || 'Failed to load carts',
+          isLoading: false,
+        });
+      }
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : 'Failed to load carts',
+        isLoading: false,
+      });
+    }
+  },
+
+  loadCartByPharmacy: async (pharmacyId: number) => {
+    set({ isLoading: true, error: null });
+
+    try {
+      const response = await cartService.getCartByPharmacy(pharmacyId);
+
+      if (response.success && response.data) {
+        const { carts } = get();
+        const updatedCarts = {
+          ...carts,
+          [pharmacyId]: response.data,
+        };
+
+        const { totalItems, totalAmount } = calculateTotals(updatedCarts);
+
+        set({
+          carts: updatedCarts,
+          totalItems,
+          totalAmount,
+          isLoading: false,
+        });
+
+        get().persistCarts();
+      } else {
+        set({
+          error: response.message || 'Failed to load cart',
+          isLoading: false,
+        });
+      }
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : 'Failed to load cart',
+        isLoading: false,
+      });
+    }
+  },
+
+  setActiveCart: (pharmacyId: number) => {
+    set({ activePharmacyId: pharmacyId });
+    cartStorage.set('activePharmacyId', pharmacyId.toString());
+  },
+
+  clearCart: async (pharmacyId: number) => {
+    set({ isClearingCart: true, error: null });
+
+    try {
+      const response = await cartService.clearCart(pharmacyId);
+
+      if (response.success) {
+        const { carts, activePharmacyId } = get();
+        const updatedCarts = { ...carts };
+        delete updatedCarts[pharmacyId];
+
+        const { totalItems, totalAmount } = calculateTotals(updatedCarts);
+
+        set({
+          carts: updatedCarts,
+          totalItems,
+          totalAmount,
+          activePharmacyId:
+            activePharmacyId === pharmacyId ? null : activePharmacyId,
+          isClearingCart: false,
+        });
+
+        get().persistCarts();
+      } else {
+        set({
+          error: response.message || 'Failed to clear cart',
+          isClearingCart: false,
+        });
+      }
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : 'Failed to clear cart',
+        isClearingCart: false,
+      });
+    }
+  },
+
+  clearAllCarts: () => {
+    set({
+      carts: {},
+      activePharmacyId: null,
+      totalItems: 0,
+      totalAmount: 0,
+    });
+
+    cartStorage.delete('carts');
+    cartStorage.delete('activePharmacyId');
+  },
+
+  // Item Management Actions
   addToCart: async (request: AddToCartRequest) => {
-    set({ loading: true, error: null });
+    set({ isAddingToCart: true, error: null });
+
     try {
-      const response = await CartService.addToCart(request);
+      const response = await cartService.addToCart(request);
+
       if (response.success && response.data) {
-        const updatedCarts = { ...get().carts };
-        updatedCarts[response.data.id] = response.data;
-        set({ carts: updatedCarts });
-        get().generateCartPreview();
+        const { carts } = get();
+        const updatedCarts = {
+          ...carts,
+          [request.pharmacyId]: response.data,
+        };
+
+        const { totalItems, totalAmount } = calculateTotals(updatedCarts);
+
+        set({
+          carts: updatedCarts,
+          totalItems,
+          totalAmount,
+          activePharmacyId: request.pharmacyId,
+          isAddingToCart: false,
+        });
+
+        get().persistCarts();
+        return true;
+      } else {
+        set({
+          error: response.message || 'Failed to add item to cart',
+          lastError: response.message || 'Failed to add item to cart',
+          isAddingToCart: false,
+        });
+        return false;
       }
-    } catch (error: any) {
-      set({ error: error.message || 'Failed to add item to cart' });
-    } finally {
-      set({ loading: false });
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to add item to cart';
+      set({
+        error: errorMessage,
+        lastError: errorMessage,
+        isAddingToCart: false,
+      });
+      return false;
     }
   },
 
-  removeFromCart: async (request: RemoveFromCartRequest) => {
-    set({ loading: true, error: null });
+  updateCartItem: async (cartItemId: number, quantity: number) => {
+    set({ isUpdatingCart: true, error: null });
+
     try {
-      const response = await CartService.removeFromCart(request);
+      const response = await cartService.updateCartItem({
+        cartItemId,
+        quantity,
+      });
+
       if (response.success && response.data) {
-        const updatedCarts = { ...get().carts };
-        updatedCarts[response.data.id] = response.data;
-        set({ carts: updatedCarts });
-        get().generateCartPreview();
+        const { carts } = get();
+        const updatedCarts = {
+          ...carts,
+          [response.data.pharmacyId]: response.data,
+        };
+
+        const { totalItems, totalAmount } = calculateTotals(updatedCarts);
+
+        set({
+          carts: updatedCarts,
+          totalItems,
+          totalAmount,
+          isUpdatingCart: false,
+        });
+
+        get().persistCarts();
+        return true;
+      } else {
+        set({
+          error: response.message || 'Failed to update cart item',
+          isUpdatingCart: false,
+        });
+        return false;
       }
-    } catch (error: any) {
-      set({ error: error.message || 'Failed to remove item from cart' });
-    } finally {
-      set({ loading: false });
+    } catch (error) {
+      set({
+        error:
+          error instanceof Error ? error.message : 'Failed to update cart item',
+        isUpdatingCart: false,
+      });
+      return false;
     }
   },
 
-  updateQuantity: async (request: UpdateCartRequest) => {
-    set({ loading: true, error: null });
+  removeFromCart: async (cartItemId: number) => {
+    set({ isRemovingFromCart: true, error: null });
+
     try {
-      const response = await CartService.updateCartItem(request);
+      const response = await cartService.removeFromCart({ cartItemId });
+
       if (response.success && response.data) {
-        const updatedCarts = { ...get().carts };
-        updatedCarts[response.data.id] = response.data;
-        set({ carts: updatedCarts });
-        get().generateCartPreview();
+        const { carts } = get();
+        const updatedCarts = {
+          ...carts,
+          [response.data.pharmacyId]: response.data,
+        };
+
+        // If cart is empty, remove it from the store
+        if (response.data.items.length === 0) {
+          delete updatedCarts[response.data.pharmacyId];
+        }
+
+        const { totalItems, totalAmount } = calculateTotals(updatedCarts);
+
+        set({
+          carts: updatedCarts,
+          totalItems,
+          totalAmount,
+          isRemovingFromCart: false,
+        });
+
+        get().persistCarts();
+        return true;
+      } else {
+        set({
+          error: response.message || 'Failed to remove item from cart',
+          isRemovingFromCart: false,
+        });
+        return false;
       }
-    } catch (error: any) {
-      set({ error: error.message || 'Failed to update cart item' });
-    } finally {
-      set({ loading: false });
+    } catch (error) {
+      set({
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to remove item from cart',
+        isRemovingFromCart: false,
+      });
+      return false;
     }
   },
 
-  clearCart: async () => {
-    set({ loading: true, error: null });
-    try {
-      await CartService.clearCart();
-      set({ carts: {}, cartPreview: [] });
-    } catch (error: any) {
-      set({ error: error.message || 'Failed to clear cart' });
-    } finally {
-      set({ loading: false });
-    }
-  },
+  // Coupon Management Actions
+  applyCoupon: async (pharmacyId: number, couponCode: string) => {
+    set({ isApplyingCoupon: true, error: null });
 
-  getCart: async (cartId: number) => {
-    set({ loading: true, error: null });
     try {
-      const response = await CartService.getCart(cartId);
-      if (response.success && response.data) {
-        const updatedCarts = { ...get().carts };
-        updatedCarts[cartId] = response.data;
-        set({ carts: updatedCarts });
-        get().generateCartPreview();
+      const { carts } = get();
+      const cart = carts[pharmacyId];
+
+      if (!cart) {
+        set({
+          error: 'Cart not found',
+          isApplyingCoupon: false,
+        });
+        return false;
       }
-    } catch (error: any) {
-      set({ error: error.message || 'Failed to fetch cart' });
-    } finally {
-      set({ loading: false });
-    }
-  },
 
-  applyCoupon: async (cartId: number, couponCode: string) => {
-    set({ loading: true, error: null });
-    try {
-      const response = await CartService.applyCoupon({
-        cartId,
+      const response = await cartService.applyCoupon({
+        cartId: cart.id,
         couponCode,
       });
+
       if (response.success && response.data) {
-        const updatedCarts = { ...get().carts };
-        updatedCarts[cartId] = response.data;
-        set({ carts: updatedCarts });
-        get().generateCartPreview();
+        const updatedCarts = {
+          ...carts,
+          [pharmacyId]: response.data,
+        };
+
+        const { totalItems, totalAmount } = calculateTotals(updatedCarts);
+
+        set({
+          carts: updatedCarts,
+          totalItems,
+          totalAmount,
+          isApplyingCoupon: false,
+        });
+
+        get().persistCarts();
+        return true;
+      } else {
+        set({
+          error: response.message || 'Failed to apply coupon',
+          isApplyingCoupon: false,
+        });
+        return false;
       }
-    } catch (error: any) {
-      set({ error: error.message || 'Failed to apply coupon' });
-    } finally {
-      set({ loading: false });
+    } catch (error) {
+      set({
+        error:
+          error instanceof Error ? error.message : 'Failed to apply coupon',
+        isApplyingCoupon: false,
+      });
+      return false;
     }
   },
 
-  removeCoupon: async (cartId: number) => {
-    set({ loading: true, error: null });
+  removeCoupon: async (pharmacyId: number) => {
+    set({ isApplyingCoupon: true, error: null });
+
     try {
-      const response = await CartService.removeCoupon(cartId);
+      const { carts } = get();
+      const cart = carts[pharmacyId];
+
+      if (!cart) {
+        set({
+          error: 'Cart not found',
+          isApplyingCoupon: false,
+        });
+        return false;
+      }
+
+      const response = await cartService.removeCoupon(cart.id);
+
       if (response.success && response.data) {
-        const updatedCarts = { ...get().carts };
-        updatedCarts[cartId] = response.data;
-        set({ carts: updatedCarts });
-        get().generateCartPreview();
+        const updatedCarts = {
+          ...carts,
+          [pharmacyId]: response.data,
+        };
+
+        const { totalItems, totalAmount } = calculateTotals(updatedCarts);
+
+        set({
+          carts: updatedCarts,
+          totalItems,
+          totalAmount,
+          isApplyingCoupon: false,
+        });
+
+        get().persistCarts();
+        return true;
+      } else {
+        set({
+          error: response.message || 'Failed to remove coupon',
+          isApplyingCoupon: false,
+        });
+        return false;
       }
-    } catch (error: any) {
-      set({ error: error.message || 'Failed to remove coupon' });
-    } finally {
-      set({ loading: false });
+    } catch (error) {
+      set({
+        error:
+          error instanceof Error ? error.message : 'Failed to remove coupon',
+        isApplyingCoupon: false,
+      });
+      return false;
     }
   },
 
-  validateCart: async (cartId: number) => {
-    set({ loading: true, error: null });
-    try {
-      const response = await CartService.validateCart(cartId);
-      if (response.success) {
-        return response.data;
-      }
-    } catch (error: any) {
-      set({ error: error.message || 'Failed to validate cart' });
-    } finally {
-      set({ loading: false });
-    }
-  },
+  // Utility Actions
+  getCartItemCount: (pharmacyId?: number) => {
+    const { carts } = get();
 
-  getTotalItems: () => {
-    return Object.values(get().carts).reduce(
-      (total, cart) =>
-        total +
-        cart.items.reduce((cartTotal, item) => cartTotal + item.quantity, 0),
+    if (pharmacyId) {
+      const cart = carts[pharmacyId];
+      return cart ? cart.totalQuantity : 0;
+    }
+
+    return Object.values(carts).reduce(
+      (total, cart) => total + cart.totalQuantity,
       0,
     );
   },
 
-  getTotalAmount: () => {
-    return Object.values(get().carts).reduce(
+  getCartTotal: (pharmacyId?: number) => {
+    const { carts } = get();
+
+    if (pharmacyId) {
+      const cart = carts[pharmacyId];
+      return cart ? cart.finalAmount : 0;
+    }
+
+    return Object.values(carts).reduce(
       (total, cart) => total + cart.finalAmount,
       0,
     );
   },
 
-  generateCartPreview: () => {
-    const carts = get().carts;
-    const preview: CartPreview[] = Object.values(carts).map(cart => ({
-      pharmacyId: cart.items[0]?.pharmacyId || 0,
-      pharmacyName: cart.items[0]?.pharmacyName || '',
+  hasItemInCart: (pharmacyId: number, medicineVariantId: number) => {
+    const { carts } = get();
+    const cart = carts[pharmacyId];
+    return cart
+      ? cart.items.some(item => item.medicineVariantId === medicineVariantId)
+      : false;
+  },
+
+  getItemQuantity: (pharmacyId: number, medicineVariantId: number) => {
+    const { carts } = get();
+    const cart = carts[pharmacyId];
+    const item = cart?.items.find(
+      item => item.medicineVariantId === medicineVariantId,
+    );
+    return item ? item.quantity : 0;
+  },
+
+  getCartPreview: () => {
+    const { carts } = get();
+
+    return Object.values(carts).map(cart => ({
+      pharmacyId: cart.pharmacyId,
+      pharmacyName: cart.items[0]?.pharmacyName || 'Unknown Pharmacy',
       itemCount: cart.totalQuantity,
-      totalAmount: cart.finalAmount,
-      items: cart.items,
+      total: cart.finalAmount,
     }));
-    set({ cartPreview: preview });
+  },
+
+  // Persistence Actions
+  persistCarts: () => {
+    const { carts, activePharmacyId } = get();
+
+    cartStorage.set('carts', JSON.stringify(carts));
+    if (activePharmacyId) {
+      cartStorage.set('activePharmacyId', activePharmacyId.toString());
+    }
+
+    const { totalItems, totalAmount } = calculateTotals(carts);
+    set({ totalItems, totalAmount });
+  },
+
+  loadPersistedCarts: () => {
+    const carts = loadPersistedCarts();
+    const activePharmacyId = loadActivePharmacyId();
+    const { totalItems, totalAmount } = calculateTotals(carts);
+
+    set({
+      carts,
+      activePharmacyId,
+      totalItems,
+      totalAmount,
+    });
+  },
+
+  // Error handling
+  clearError: () => {
+    set({ error: null, lastError: null });
+  },
+
+  setError: (error: string) => {
+    set({ error, lastError: error });
   },
 }));
+
+// Selector hooks for easy access
+export const useActiveCarts = () =>
+  useCartStore(state =>
+    Object.values(state.carts).filter(cart => cart.items.length > 0),
+  );
+
+export const useActiveCart = () =>
+  useCartStore(state => {
+    const { carts, activePharmacyId } = state;
+    return activePharmacyId ? carts[activePharmacyId] : null;
+  });
+
+export const useCartItemCount = (pharmacyId?: number) =>
+  useCartStore(state => state.getCartItemCount(pharmacyId));
+
+export const useCartTotal = (pharmacyId?: number) =>
+  useCartStore(state => state.getCartTotal(pharmacyId));
+
+export const useCartLoading = () =>
+  useCartStore(state => ({
+    isLoading: state.isLoading,
+    isAddingToCart: state.isAddingToCart,
+    isUpdatingCart: state.isUpdatingCart,
+    isRemovingFromCart: state.isRemovingFromCart,
+    isClearingCart: state.isClearingCart,
+    isApplyingCoupon: state.isApplyingCoupon,
+  }));
+
+export const useCartError = () =>
+  useCartStore(state => ({
+    error: state.error,
+    lastError: state.lastError,
+    clearError: state.clearError,
+  }));
+
+// Initialize store on app start
+export const initializeCartStore = () => {
+  const store = useCartStore.getState();
+  store.loadPersistedCarts();
+  store.loadAllCarts();
+};
+
+export default useCartStore;

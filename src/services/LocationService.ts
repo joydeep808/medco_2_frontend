@@ -84,7 +84,6 @@ const olaMapAxiosInstance = axios.create({
   },
 });
 olaMapAxiosInstance.interceptors.response.use(async config => {
-  console.log('config', config);
   return config;
 });
 

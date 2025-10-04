@@ -19,7 +19,17 @@ export interface SearchMedicine {
   name: string;
   genericName: string;
   manufacturer: string;
-  category: string;
+  category: {
+    id: number;
+    name: string;
+    description: string;
+  };
+  description: string;
+  requiresPrescription: boolean;
+  isActive: boolean;
+  variants: any[];
+  createdAt: string;
+  updatedAt: string;
   price: number;
   discountedPrice: number;
   pharmacy: {

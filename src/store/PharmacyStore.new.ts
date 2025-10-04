@@ -114,6 +114,7 @@ export const usePharmacyStore = create<PharmacyState>((set, get) => ({
         longitude,
         radiusKm,
       );
+      
       if (response.success && response.data) {
         const pharmaciesWithDistance = response.data.content.map(pharmacy => ({
           ...pharmacy,
